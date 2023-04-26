@@ -1,0 +1,33 @@
+{
+    "drones": [
+        {
+            "id": 1,
+            "hostname": "192.168.98.10",
+            "port": 1883,
+            "flightplan": {
+                "max_horizontal_velocity": 25.0,
+                "max_horizontal_acceleration": 1.5,
+                "max_vertical_velocity": 2.5,
+                "max_vertical_acceleration": 1,
+                "landing_rod": 2,
+                "waypoints": [
+                    {
+                        "longitude": 0.0,
+                        "latitude": 0.0,
+                        "altitude": 0.0
+                    },
+                    {
+                        "longitude": 5000,
+                        "latitude": 2500,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": -1000,
+                        "latitude": 3000,
+                        "altitude": 15
+                    }
+                ]
+            }
+        }
+    ]
+}

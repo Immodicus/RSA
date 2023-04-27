@@ -1,16 +1,20 @@
 import threading
 import json
 import time
-from math import sqrt, atan2, pi, sin, cos, degrees
-from time import sleep
 import paho.mqtt.client as mqtt
 
+from math import sqrt, atan2, pi, sin, cos, degrees, ceil
+from time import sleep
+from haversine import haversine, Unit, inverse_haversine, Direction
+
 class Drone:
-    def __init__(self, drone_data):
+    def __init__(self, origin, drone_data):
         self.id = drone_data['id']
         self.flightplan = drone_data['flightplan']
         self.hostname = drone_data['hostname']
         self.port = drone_data['port']
+        self.origin = (origin['latitude'], origin['longitude'])
+        
         print(f'Drone {self.id} instanciated')
         print(f'Drone flightplan: {self.flightplan}')
 
@@ -62,7 +66,21 @@ class Drone:
         t2.join()
 
     def process_message(self, message):
-        print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
+        #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
+
+        latitude = message['latitude']
+        longitude = message['longitude']
+
+        y = haversine(self.origin, (latitude, self.origin[1]), unit=Unit.METERS)
+        x = haversine(self.origin, (self.origin[0], longitude), unit=Unit.METERS)
+        if latitude > self.origin[0]:
+            y = -y
+        if longitude > self.origin[1]:
+            x = -x
+            
+        stationID = message['stationID']
+
+        print(f'Drone {self.id} knows Drone {stationID} is at {(x, y)}')
 
     def go(self):
         
@@ -230,7 +248,7 @@ class Drone:
                 self.vel_z = vel_z
                 self.state = state
 
-                print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
+                #print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
                 time.sleep(0.5)
         
         with open(f'./drone_{self.id}_pos.json', 'w') as outfile:
@@ -246,10 +264,17 @@ class Drone:
         while(self.alive):
             f = open('../examples/in_cam.json', 'r')
             m = json.load(f)
-            m["altitude"] = self.pos_y
-            m["longitude"] = self.pos_x / 10000
-            m["latitude"] = self.pos_y / 10000
-            m["heading"] = degrees(self.heading)
+
+            heading_origin = atan2(0 - self.pos_x, 0 - self.pos_y)
+            if heading_origin < 0:
+                heading_origin += 2 * pi
+
+            latitude, longitude = inverse_haversine(self.origin, sqrt(self.pos_x**2 + self.pos_y**2), heading_origin, unit=Unit.METERS)
+
+            m["altitude"] = self.pos_z
+            m["longitude"] = longitude
+            m["latitude"] = latitude
+            m["heading"] = heading_origin
             m["speed"] = sqrt(self.vel_x**2 + self.vel_y**2)
             m["speedLimiter"] = m["speed"] == self.flightplan["max_horizontal_velocity"]
             m["cruiseControl"] = True

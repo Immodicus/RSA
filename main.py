@@ -21,7 +21,7 @@ def main():
     print(sim_json)
     drones = []
     for drone in sim_json['drones']:
-        drones.append(Process(target=run_drone, args=(drone,)))
+        drones.append(Process(target=run_drone, args=(sim_json['origin'], drone,)))
 
     for drone in drones:
         drone.start()
@@ -31,8 +31,8 @@ def main():
 
     print(f'All drones done!')
 
-def run_drone(drone):
-    drone_obj = Drone(drone)
+def run_drone(origin, drone_data):
+    drone_obj = Drone(origin, drone_data)
     drone_obj.start()
     drone_obj.join()
 

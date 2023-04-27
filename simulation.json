@@ -1,5 +1,11 @@
 {
-    "drones": [
+    "origin": 
+    {
+        "latitude": 40.640506,
+        "longitude": -8.653754
+    },
+    "drones": 
+    [
         {
             "id": 1,
             "hostname": "192.168.98.10",
@@ -23,7 +29,36 @@
                     },
                     {
                         "longitude": -1000,
-                        "latitude": 3000,
+                        "latitude": -500,
+                        "altitude": 15
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "hostname": "192.168.98.20",
+            "port": 1883,
+            "flightplan": {
+                "max_horizontal_velocity": 25.0,
+                "max_horizontal_acceleration": 1.5,
+                "max_vertical_velocity": 2.5,
+                "max_vertical_acceleration": 1,
+                "landing_rod": 2,
+                "waypoints": [
+                    {
+                        "longitude": 0.0,
+                        "latitude": 0.0,
+                        "altitude": 0.0
+                    },
+                    {
+                        "longitude": 5000,
+                        "latitude": 2500,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": -1000,
+                        "latitude": -500,
                         "altitude": 15
                     }
                 ]

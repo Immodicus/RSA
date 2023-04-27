@@ -38,7 +38,7 @@ docker compose up
 python3 main.py -simulation_file simulation.json
 ```
 
-## Runing Frontend
+## Running Frontend
 Get in into frontend folder and run the following commands
 ```
  python3 -m venv venv

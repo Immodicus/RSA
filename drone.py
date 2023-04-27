@@ -73,9 +73,9 @@ class Drone:
 
         y = haversine(self.origin, (latitude, self.origin[1]), unit=Unit.METERS)
         x = haversine(self.origin, (self.origin[0], longitude), unit=Unit.METERS)
-        if latitude > self.origin[0]:
+        if latitude < self.origin[0]:
             y = -y
-        if longitude > self.origin[1]:
+        if longitude < self.origin[1]:
             x = -x
             
         stationID = message['stationID']
@@ -265,7 +265,7 @@ class Drone:
             f = open('../examples/in_cam.json', 'r')
             m = json.load(f)
 
-            heading_origin = atan2(0 - self.pos_x, 0 - self.pos_y)
+            heading_origin = atan2(self.pos_x, self.pos_y)
             if heading_origin < 0:
                 heading_origin += 2 * pi
 
@@ -274,7 +274,7 @@ class Drone:
             m["altitude"] = self.pos_z
             m["longitude"] = longitude
             m["latitude"] = latitude
-            m["heading"] = heading_origin
+            m["heading"] = self.heading
             m["speed"] = sqrt(self.vel_x**2 + self.vel_y**2)
             m["speedLimiter"] = m["speed"] == self.flightplan["max_horizontal_velocity"]
             m["cruiseControl"] = True

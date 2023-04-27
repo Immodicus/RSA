@@ -47,3 +47,7 @@ Get in into frontend folder and run the following commands
 pip3 install flask flask-wtf
 
 ```
+```
+flask --app app run
+
+```

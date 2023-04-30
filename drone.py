@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 from math import sqrt, atan2, pi, sin, cos, degrees, ceil
 from time import sleep
 from haversine import haversine, Unit, inverse_haversine, Direction
+from sympy.geometry import Point, Point2D, Line, intersection
 
 class Drone:
     def __init__(self, origin, drone_data):
@@ -65,8 +66,11 @@ class Drone:
         t1.join()
         t2.join()
 
-    def process_message(self, message):
+    def process_cam_message(self, message):
         #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
+
+        if self.id != 1: 
+            return
 
         latitude = message['latitude']
         longitude = message['longitude']
@@ -79,8 +83,33 @@ class Drone:
             x = -x
             
         stationID = message['stationID']
+        heading = message['heading']
+        altitude = message['altitude']
 
-        print(f'Drone {self.id} knows Drone {stationID} is at {(x, y)}')
+        print(f'Drone {self.id} knows Drone {stationID} is at {(x, y)} heading {heading}')
+
+        my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
+        other_line = Line(Point(x, y), Point(x + sin(heading), y + cos(heading)))     
+
+        if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > 500:
+            return
+        
+        if abs(self.pos_z - altitude) > 10:
+            return
+
+        intersection = my_line.intersection(other_line)
+        if len(intersection) > 0:   
+            collision_point = intersection[0].evalf()
+            if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
+                return
+            
+            if (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
+                return
+
+            print(f'Drone {self.id} detected a probable collision with {stationID} at: {collision_point}')
+
+    def process_denm_message(self, message):
+        pass     
 
     def go(self):
         
@@ -288,10 +317,22 @@ class Drone:
             f.close()
             sleep(1)
 
+    def generate_denm(self):
+        with open('../examples/in_denm.json', 'r') as f:
+            m = json.load(f)
+            
+            m = json.dumps(m)
+            self.mqtt_client.publish("vanetza/in/denm",m)    
+
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe("vanetza/out/cam")
+    client.subscribe("vanetza/out/denm")
 
-def on_message(client, userdata, msg):
+def on_message(client: mqtt.Client, userdata: Drone, msg: mqtt.MQTTMessage):
     message = json.loads(msg.payload.decode('utf-8'))
-    userdata.process_message(message)
+    
+    if msg.topic == 'vanetza/out/cam':
+        userdata.process_cam_message(message)
+    if msg.topic == 'vanetza/out/denm':
+        userdata.process_denm_message(message)

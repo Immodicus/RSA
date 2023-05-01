@@ -60,11 +60,8 @@ class Drone:
         self.time = time.time()
 
         t1 = threading.Thread(target=self.go)
-        t2 = threading.Thread(target=self.generate_cam)
         t1.start()
-        t2.start()
         t1.join()
-        t2.join()
 
     def process_cam_message(self, message):
         #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
@@ -85,6 +82,7 @@ class Drone:
         stationID = message['stationID']
         heading = message['heading']
         altitude = message['altitude']
+        speed = message['speed']
 
         print(f'Drone {self.id} knows Drone {stationID} is at {(x, y)} heading {heading}')
 
@@ -94,7 +92,7 @@ class Drone:
         if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > 500:
             return
         
-        if abs(self.pos_z - altitude) > 10:
+        if abs(self.pos_z - altitude) > 6:
             return
 
         intersection = my_line.intersection(other_line)
@@ -106,7 +104,10 @@ class Drone:
             if (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
                 return
 
-            print(f'Drone {self.id} detected a probable collision with {stationID} at: {collision_point}')
+            my_time = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2) / sqrt(self.vel_x**2 + self.vel_y**2)
+            other_time = sqrt((x - collision_point.x)**2 + (y - collision_point.y)**2) / speed
+
+            print(f'Drone {self.id} detected a probable collision with {stationID} at: {collision_point} in {my_time}:{other_time} seconds')
 
     def process_denm_message(self, message):
         pass     
@@ -276,6 +277,7 @@ class Drone:
                 self.vel_y = vel_y
                 self.vel_z = vel_z
                 self.state = state
+                self.generate_cam()
 
                 #print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
                 time.sleep(0.5)
@@ -290,8 +292,7 @@ class Drone:
 
 
     def generate_cam(self):
-        while(self.alive):
-            f = open('../examples/in_cam.json', 'r')
+        with open('../examples/in_cam.json', 'r') as f:
             m = json.load(f)
 
             heading_origin = atan2(self.pos_x, self.pos_y)
@@ -311,11 +312,8 @@ class Drone:
             m["stationID"] = self.id
             m["stationType"] = 255
 
-
             m = json.dumps(m)
             self.mqtt_client.publish("vanetza/in/cam",m)
-            f.close()
-            sleep(1)
 
     def generate_denm(self):
         with open('../examples/in_denm.json', 'r') as f:

@@ -44,10 +44,13 @@ Get in into frontend folder and run the following commands
  python3 -m venv venv
 ```
 ```
-pip3 install flask flask-wtf
+ source venv/bin/activate
+```
+```
+pip3 install -r requirements.txt
 
 ```
 ```
-flask --app app run
+flask --app map run or python3 map.py
 
 ```

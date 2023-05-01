@@ -14,6 +14,16 @@
     <!-- api mapbox -->
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+
+    <!-- api jquery map -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='map.css') }}" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     
     
 
@@ -68,15 +78,23 @@
  
   </main>
   <footer>
+    <script src="static/map.js" /></script>
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoieGNsb3VkIiwiYSI6ImNsZ3huZnFiZzAxOHQzcGp1YzExMHM2ZmUifQ.BMxHQXbo6vPPptp_cSAIbw';
-        var map = new mapboxgl.Map({
-          container: 'map',
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: [-122.4194, 37.7749],
-          zoom: 13
-        });
-      </script>
+      var rsuIcon = L.icon({
+          iconUrl: "static/antenna.png",
+          iconSize: [16, 16],
+          iconAnchor: [18, 39],
+          popupAnchor: [10, -35]
+          
+      });
+      
+      rsu.forEach(function(r) {
+      L.marker([r[1], r[2]], {icon: rsuIcon}).addTo(map)
+        .bindTooltip("rsu_" + r[0], {permanent: false});
+      });
+
+      
+  </script>
     <!-- place footer here -->
   </footer>
   <!-- Bootstrap JavaScript Libraries -->

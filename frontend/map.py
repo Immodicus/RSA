@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from flask_wtf import FlaskForm
 from wtforms import SubmitField
-import requests
+
 
 
 app = Flask(__name__)

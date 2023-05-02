@@ -33,7 +33,12 @@ docker compose up
 
 1. Change ***simulation.json*** file to match your preferences and adjust ***docker-compose.yml*** appropriately
 
-2. Run the simulation
+2. Install the required dependencies
+```bash
+pip3 install -r requirements.txt
+```
+
+3. Run the simulation
 ```bash
 python3 main.py -simulation_file simulation.json
 ```
@@ -41,16 +46,14 @@ python3 main.py -simulation_file simulation.json
 ## Running Frontend
 Get in into frontend folder and run the following commands
 ```
- python3 -m venv venv
+python3 -m venv venv
 ```
 ```
- source venv/bin/activate
+source venv/bin/activate
 ```
 ```
 pip3 install -r requirements.txt
-
 ```
 ```
 flask --app map run or python3 map.py
-
 ```

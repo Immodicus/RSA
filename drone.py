@@ -45,7 +45,6 @@ class Drone:
         self.mqtt_client = client
 
         self.alive = True
-        self.target_wp = None
         self.pos_x = 0
         self.pos_y = 0
         self.pos_z = 0
@@ -57,7 +56,15 @@ class Drone:
         self.vel_z = 0
         self.heading = 0
         self.state = ''
+        self.latitude = 0
+        self.longitude = 0
+
         self.time = time.time()
+
+        self.coll_avd_path = None
+        self.coll_avd_active = False
+        self.coll_point = None
+        self.coll_denm_seq = 0
 
         t1 = threading.Thread(target=self.go)
         t1.start()
@@ -131,6 +138,7 @@ class Drone:
 
         positions = []
         velocities = []
+        coordinates = []
 
         for i in range(len(self.flightplan['waypoints'])):
             waypoint = self.flightplan['waypoints'][i]
@@ -262,13 +270,17 @@ class Drone:
                     pos_y += vel_y * time_delta
 
                 if x_arrived and y_arrived and (z_arrived or state != 'landing'):
-                    # pos_x = t_pos_x
-                    # pos_y = t_pos_y
-                    # pos_z = t_pos_z
                     alive = False
+
+                heading_origin = atan2(pos_x, pos_y)
+                if heading_origin < 0:
+                    heading_origin += 2 * pi
+                latitude, longitude = inverse_haversine(self.origin, sqrt(pos_x**2 + pos_y**2), heading_origin, unit=Unit.METERS)
 
                 positions.append({'x': pos_x, 'y': pos_y, 'z': pos_z})
                 velocities.append({'x': vel_x, 'y': vel_y, 'z': vel_y})
+                coordinates.append({'latitude': latitude, 'longitude': longitude})
+                
                 self.heading = heading
                 self.pos_x = pos_x
                 self.pos_y = pos_y
@@ -277,6 +289,8 @@ class Drone:
                 self.vel_y = vel_y
                 self.vel_z = vel_z
                 self.state = state
+                self.latitude = latitude
+                self.longitude = longitude
                 self.generate_cam()
 
                 #print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
@@ -288,6 +302,9 @@ class Drone:
         with open(f'./drone_{self.id}_vel.json', 'w') as outfile:
             outfile.write(json.dumps({'velocities': velocities}, indent= 4))
 
+        with open(f'./drone_{self.id}_coords.json', 'w') as outfile:
+            outfile.write(json.dumps({'coordinates': coordinates}, indent= 4))
+
         self.alive = False
 
 
@@ -295,15 +312,9 @@ class Drone:
         with open('../examples/in_cam.json', 'r') as f:
             m = json.load(f)
 
-            heading_origin = atan2(self.pos_x, self.pos_y)
-            if heading_origin < 0:
-                heading_origin += 2 * pi
-
-            latitude, longitude = inverse_haversine(self.origin, sqrt(self.pos_x**2 + self.pos_y**2), heading_origin, unit=Unit.METERS)
-
             m["altitude"] = self.pos_z
-            m["longitude"] = longitude
-            m["latitude"] = latitude
+            m["longitude"] = self.longitude
+            m["latitude"] = self.latitude
             m["heading"] = self.heading
             m["speed"] = sqrt(self.vel_x**2 + self.vel_y**2)
             m["speedLimiter"] = m["speed"] == self.flightplan["max_horizontal_velocity"]

@@ -175,6 +175,7 @@ cython_debug/
 # Built Visual Studio Code Extensions
 *.vsix
 
-#Json log files
+# Json log files
 drone_*_pos.json
 drone_*_vel.json
+drone_*_coords.json

@@ -1,8 +1,14 @@
 {
-    "origin": 
+    "settings":
     {
-        "latitude": 40.640506,
-        "longitude": -8.653754
+        "origin": 
+        {
+            "latitude": 40.640506,
+            "longitude": -8.653754
+        },
+        "radio_range": 500,
+        "min_safe_altitude_delta": 6,
+        "cam_stale_time": 10
     },
     "drones": 
     [

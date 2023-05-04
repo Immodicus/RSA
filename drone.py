@@ -8,12 +8,15 @@ from sympy.geometry import Point, Point2D, Line, Point3D
 from threading import Thread
 
 class Drone:
-    def __init__(self, origin, drone_data):
+    def __init__(self, settings, drone_data):
         self.id = drone_data['id']
         self.flightplan = drone_data['flightplan']
         self.hostname = drone_data['hostname']
         self.port = drone_data['port']
-        self.origin = (origin['latitude'], origin['longitude'])
+        self.origin = (settings['origin']['latitude'], settings['origin']['longitude'])
+        self.radio_range = settings['radio_range']
+        self.min_safe_altitude_delta = settings['min_safe_altitude_delta']
+        self.cam_stale_time = settings['cam_stale_time']
         
         print(f'Drone {self.id} instanciated')
         print(f'Drone flightplan: {self.flightplan}')
@@ -98,10 +101,10 @@ class Drone:
         my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
         cam_line = Line(Point(x, y), Point(x + sin(cam_heading), y + cos(cam_heading)))     
 
-        if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > 500:
+        if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > self.radio_range:
             return
         
-        if abs(self.pos_z - cam_altitude) > 6:
+        if abs(self.pos_z - cam_altitude) > self.min_safe_altitude_delta:
             return
 
         intersection: list[Point2D] = my_line.intersection(cam_line)
@@ -176,9 +179,10 @@ class Drone:
             print(f'Drone {self.id} is now aware of drone {stationID}')
         self.cam_awareness[stationID] = time.time()
         
-        stales = [stationID for stationID, lastCam in self.cam_awareness.items() if current_time - lastCam > 10]
+        stales = [stationID for stationID, lastCam in self.cam_awareness.items() if current_time - lastCam > self.cam_stale_time]
         
         for stale in stales:
+            del self.cam_awareness[stale]
             print(f'Drone {self.id} removed stale entry for drone {stale}')
 
     def process_denm_message(self, message):

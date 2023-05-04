@@ -18,10 +18,10 @@ def main():
         print(f'Failed to open file {args.simulation_file}')
 
     sim_json = json.loads(json_str)
-    print(sim_json)
+    print(json_str)
     drones = []
     for drone in sim_json['drones']:
-        drones.append(Process(target=run_drone, args=(sim_json['origin'], drone,)))
+        drones.append(Process(target=run_drone, args=(sim_json['settings'], drone,)))
 
     for drone in drones:
         drone.start()
@@ -31,8 +31,8 @@ def main():
 
     print(f'All drones done!')
 
-def run_drone(origin, drone_data):
-    drone_obj = Drone(origin, drone_data)
+def run_drone(settings, drone_data):
+    drone_obj = Drone(settings, drone_data)
     drone_obj.start()
     drone_obj.join()
 

@@ -1,12 +1,11 @@
-import threading
 import json
 import time
 import paho.mqtt.client as mqtt
 
-from math import sqrt, atan2, pi, sin, cos, degrees, ceil
-from time import sleep
-from haversine import haversine, Unit, inverse_haversine, Direction
-from sympy.geometry import Point, Point2D, Line, intersection
+from math import sqrt, atan2, pi, sin, cos
+from haversine import haversine, Unit, inverse_haversine
+from sympy.geometry import Point, Point2D, Line, Point3D
+from threading import Thread
 
 class Drone:
     def __init__(self, origin, drone_data):
@@ -20,7 +19,7 @@ class Drone:
         print(f'Drone flightplan: {self.flightplan}')
 
     def start(self):
-        self.thread = threading.Thread(target=self.__start)
+        self.thread: Thread = Thread(target=self.__start)
         self.thread.start()
 
     def join(self):
@@ -34,77 +33,84 @@ class Drone:
             self.mqtt_thread.join()
 
     def __start(self):
-        client = mqtt.Client()
+        client: mqtt.Client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
         client.user_data_set(self)
         client.connect(self.hostname, self.port, 60)
 
-        self.mqtt_thread = threading.Thread(target=client.loop_forever)
+        self.mqtt_thread: Thread = Thread(target=client.loop_forever)
         self.mqtt_thread.start()
         self.mqtt_client = client
 
-        self.alive = True
-        self.pos_x = 0
-        self.pos_y = 0
-        self.pos_z = 0
-        self.t_pos_x = 0
-        self.t_pos_y = 0
-        self.t_pos_z = 0
-        self.vel_x = 0
-        self.vel_y = 0
-        self.vel_z = 0
-        self.heading = 0
-        self.state = ''
-        self.latitude = 0
-        self.longitude = 0
+        self.alive: bool = True
+        self.pos_x: float = 0
+        self.pos_y: float = 0
+        self.pos_z: float = 0
+        self.t_pos_x: float = 0
+        self.t_pos_y: float = 0
+        self.t_pos_z: float = 0
+        self.vel_x: float = 0
+        self.vel_y: float = 0
+        self.vel_z: float = 0
+        self.heading: float = 0
+        self.state: str = ''
+        self.latitude: float = 0
+        self.longitude: float = 0
 
-        self.time = time.time()
+        self.time: float = time.time()
+
+        self.cam_awareness: dict = {}
 
         self.coll_avd_path = None
-        self.coll_avd_active = False
-        self.coll_point = None
-        self.coll_denm_seq = 0
+        self.coll_avd_active: bool = False
+        self.coll_point: Point3D = None
+        self.coll_denm_seq: int = 0
 
-        t1 = threading.Thread(target=self.go)
+        t1: Thread = Thread(target=self.go)
         t1.start()
         t1.join()
 
     def process_cam_message(self, message):
         #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
 
+        cam_stationID = message['stationID']
+        cam_latitude = message['latitude']
+        cam_longitude = message['longitude']
+        cam_heading = message['heading']
+        cam_altitude = message['altitude']
+        cam_speed = message['speed']
+
+        self.awareness_update(cam_stationID)
+
         if self.id != 1: 
             return
 
-        latitude = message['latitude']
-        longitude = message['longitude']
-
-        y = haversine(self.origin, (latitude, self.origin[1]), unit=Unit.METERS)
-        x = haversine(self.origin, (self.origin[0], longitude), unit=Unit.METERS)
-        if latitude < self.origin[0]:
+        y = haversine(self.origin, (cam_latitude, self.origin[1]), unit=Unit.METERS)
+        x = haversine(self.origin, (self.origin[0], cam_longitude), unit=Unit.METERS)
+        if cam_latitude < self.origin[0]:
             y = -y
-        if longitude < self.origin[1]:
+        if cam_longitude < self.origin[1]:
             x = -x
-            
-        stationID = message['stationID']
-        heading = message['heading']
-        altitude = message['altitude']
-        speed = message['speed']
 
-        print(f'Drone {self.id} knows Drone {stationID} is at {(x, y)} heading {heading}')
+        print(f'Drone {self.id} knows Drone {cam_stationID} is at {(x, y)} heading {cam_heading}')
 
         my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
-        other_line = Line(Point(x, y), Point(x + sin(heading), y + cos(heading)))     
+        cam_line = Line(Point(x, y), Point(x + sin(cam_heading), y + cos(cam_heading)))     
 
         if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > 500:
             return
         
-        if abs(self.pos_z - altitude) > 6:
+        if abs(self.pos_z - cam_altitude) > 6:
             return
 
-        intersection = my_line.intersection(other_line)
+        intersection: list[Point2D] = my_line.intersection(cam_line)
         if len(intersection) > 0:   
             collision_point = intersection[0].evalf()
+            
+            heading_origin = get_heading_from_origin(collision_point.x, collision_point.y)
+            collision_latitude, collision_longitude = inverse_haversine(self.origin, sqrt(collision_point.x**2 + collision_point.y**2), heading_origin, unit=Unit.METERS)
+
             if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
                 return
             
@@ -112,9 +118,68 @@ class Drone:
                 return
 
             my_time = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2) / sqrt(self.vel_x**2 + self.vel_y**2)
-            other_time = sqrt((x - collision_point.x)**2 + (y - collision_point.y)**2) / speed
+            cam_time = sqrt((x - collision_point.x)**2 + (y - collision_point.y)**2) / cam_speed
 
-            print(f'Drone {self.id} detected a probable collision with {stationID} at: {collision_point} in {my_time}:{other_time} seconds')
+            if not self.coll_avd_active:
+                print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
+                self.coll_avd_active = True
+                
+                decision_altitude = None
+                if self.id > cam_stationID:
+                    decision_altitude = self.pos_z + 5
+                else:
+                    decision_altitude = self.pos_z - 5
+
+                self.generate_denm(Point3D(collision_latitude, collision_longitude, cam_altitude), [Point3D(collision_latitude, collision_longitude, decision_altitude)])
+
+    def generate_denm(self, collision_point: Point3D, avoidance_path: list[Point3D]):
+        collision_point = collision_point.evalf()
+        avoidance_path = [point.evalf() for point in avoidance_path]
+        
+        with open('../examples/in_denm.json', 'r') as f:
+            m = json.load(f)
+            
+            m['management']['actionID']['originatingStationID'] = self.id
+            m['management']['actionID']['sequenceNumber'] = self.coll_denm_seq
+            m['management']['detectionTime'] = time.time()
+            m['management']['referenceTime'] = time.time()
+            m['management']['eventPosition']['latitude'] = float(collision_point.y)
+            m['management']['eventPosition']['longitude'] = float(collision_point.x)
+            m['management']['eventPosition']['altitude']['altitudeValue'] = float(collision_point.z)
+            m['management']['stationType'] = 255
+
+            m['situation']['eventType']['causeCode'] = 97
+            m['situation']['eventType']['subCauseCode'] = 97
+
+            m['alacarte']['roadWorks']['recommendedPath'] = []
+            for point in avoidance_path:
+                m['alacarte']['roadWorks']['recommendedPath'].append(
+                    {
+                        'latitude': float(point.y), 'longitude': float(point.x), 'altitude': {'altitudeValue': float(point.z), 'altitudeConfidence': 1},
+                        'positionConfidenceEllipse': {
+                        'semiMajorConfidence': 0,
+                        'semiMinorConfidence': 0,
+                        'semiMajorOrientation': 0
+                        }
+                    }
+                    )
+
+            m = json.dumps(m)
+            
+            self.mqtt_client.publish("vanetza/in/denm",m)  
+            self.coll_denm_seq += 1
+
+    def awareness_update(self, stationID: int):       
+        current_time = time.time()
+        
+        if stationID not in self.cam_awareness:
+            print(f'Drone {self.id} is now aware of drone {stationID}')
+        self.cam_awareness[stationID] = time.time()
+        
+        stales = [stationID for stationID, lastCam in self.cam_awareness.items() if current_time - lastCam > 10]
+        
+        for stale in stales:
+            print(f'Drone {self.id} removed stale entry for drone {stale}')
 
     def process_denm_message(self, message):
         pass     
@@ -172,9 +237,7 @@ class Drone:
                 time_delta = current_time - last_update
                 last_update = current_time
                 
-                heading = atan2(t_pos_x - pos_x, t_pos_y - pos_y)
-                if heading < 0:
-                    heading += 2 * pi
+                heading = get_heading_between_points(pos_x, t_pos_x, pos_y, t_pos_y)
 
                 current_velocity = sqrt( vel_x**2 + vel_y**2 )
                 current_velocity = current_velocity + max_horizontal_acceleration * time_delta  
@@ -272,9 +335,7 @@ class Drone:
                 if x_arrived and y_arrived and (z_arrived or state != 'landing'):
                     alive = False
 
-                heading_origin = atan2(pos_x, pos_y)
-                if heading_origin < 0:
-                    heading_origin += 2 * pi
+                heading_origin = get_heading_from_origin(pos_x, pos_y)
                 latitude, longitude = inverse_haversine(self.origin, sqrt(pos_x**2 + pos_y**2), heading_origin, unit=Unit.METERS)
 
                 positions.append({'x': pos_x, 'y': pos_y, 'z': pos_z})
@@ -324,16 +385,23 @@ class Drone:
             m["stationType"] = 255
 
             m = json.dumps(m)
-            self.mqtt_client.publish("vanetza/in/cam",m)
+            self.mqtt_client.publish("vanetza/in/cam",m)  
 
-    def generate_denm(self):
-        with open('../examples/in_denm.json', 'r') as f:
-            m = json.load(f)
-            
-            m = json.dumps(m)
-            self.mqtt_client.publish("vanetza/in/denm",m)    
+def get_heading_from_origin(pos_x: float, pos_y: float) -> float:
+    heading_origin = atan2(pos_x, pos_y)
+    if heading_origin < 0:
+        heading_origin += 2 * pi
 
-def on_connect(client, userdata, flags, rc):
+    return heading_origin
+
+def get_heading_between_points(x_a: float, x_b: float, y_a: float, y_b: float) -> float:
+    heading = atan2(x_b - x_a, y_b - y_a)
+    if heading < 0:
+        heading += 2 * pi 
+
+    return heading  
+
+def on_connect(client: mqtt.Client, userdata: Drone, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe("vanetza/out/cam")
     client.subscribe("vanetza/out/denm")

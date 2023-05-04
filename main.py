@@ -19,15 +19,16 @@ def main():
 
     sim_json = json.loads(json_str)
     print(json_str)
-    drones = []
+    
+    drone_processes: list[Process] = []
     for drone in sim_json['drones']:
-        drones.append(Process(target=run_drone, args=(sim_json['settings'], drone,)))
+        drone_processes.append(Process(target=run_drone, args=(sim_json['settings'], drone,)))
 
-    for drone in drones:
-        drone.start()
+    for drone_process in drone_processes:
+        drone_process.start()
 
-    for drone in drones:
-        drone.join()
+    for drone_process in drone_processes:
+        drone_process.join()
 
     print(f'All drones done!')
 

@@ -8,7 +8,9 @@
         },
         "radio_range": 500,
         "min_safe_altitude_delta": 6,
-        "cam_stale_time": 10
+        "cam_stale_time": 10,
+        "live_server_address": "localhost",
+        "live_server_port": 6000
     },
     "drones": 
     [

@@ -6,6 +6,7 @@ from math import sqrt, atan2, pi, sin, cos
 from haversine import haversine, Unit, inverse_haversine
 from sympy.geometry import Point, Point2D, Line, Point3D
 from threading import Thread
+from socket import socket, AF_INET, SOCK_STREAM
 
 class Drone:
     def __init__(self, settings, drone_data):
@@ -17,6 +18,8 @@ class Drone:
         self.radio_range = settings['radio_range']
         self.min_safe_altitude_delta = settings['min_safe_altitude_delta']
         self.cam_stale_time = settings['cam_stale_time']
+
+        self.init_live_server_conn(settings['live_server_address'], settings['live_server_port'])
         
         print(f'Drone {self.id} instanciated')
         print(f'Drone flightplan: {self.flightplan}')
@@ -32,6 +35,7 @@ class Drone:
             pass
         finally:
             self.alive = False
+            self.live_server.close()
             self.mqtt_client.disconnect()
             self.mqtt_thread.join()
 
@@ -74,6 +78,35 @@ class Drone:
         t1.start()
         t1.join()
 
+    def init_live_server_conn(self, host: int, port: int):
+        print(f'Drone {self.id} connecting to live server at {host}:{port}')
+        self.live_server: socket = socket(AF_INET, SOCK_STREAM)
+        self.live_server.connect((host, port))
+        print(f'Drone {self.id} connected to live server')
+
+    def live_server_send(self):
+        collision_point = None
+        if self.coll_point != None:
+            collision_point = {
+                            'latitude': float(self.coll_point.y), 
+                            'longitude': float(self.coll_point.x), 
+                            'altitude': float(self.coll_point.x)
+                        }
+        
+        data = {
+                    'drone_id': self.id, 
+                    'latitude': self.latitude, 
+                    'longitude': self.longitude, 
+                    'heading': self.heading, 
+                    'horizontal_velocity': sqrt(self.vel_x**2 + self.vel_y**2),
+                    'probable_collision_points': [
+                        collision_point
+                    ]
+                }
+
+        json_text = json.dumps(data, indent=4)
+        self.live_server.sendall(bytes(json_text,encoding="utf-8"))
+
     def process_cam_message(self, message):
         #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
 
@@ -85,9 +118,6 @@ class Drone:
         cam_speed = message['speed']
 
         self.awareness_update(cam_stationID)
-
-        if self.id != 1: 
-            return
 
         y = haversine(self.origin, (cam_latitude, self.origin[1]), unit=Unit.METERS)
         x = haversine(self.origin, (self.origin[0], cam_longitude), unit=Unit.METERS)
@@ -126,6 +156,7 @@ class Drone:
             if not self.coll_avd_active:
                 print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
                 self.coll_avd_active = True
+                self.coll_point = Point3D(collision_latitude, collision_longitude, cam_altitude).evalf()
                 
                 decision_altitude = None
                 if self.id > cam_stationID:
@@ -160,9 +191,9 @@ class Drone:
                     {
                         'latitude': float(point.y), 'longitude': float(point.x), 'altitude': {'altitudeValue': float(point.z), 'altitudeConfidence': 1},
                         'positionConfidenceEllipse': {
-                        'semiMajorConfidence': 0,
-                        'semiMinorConfidence': 0,
-                        'semiMajorOrientation': 0
+                            'semiMajorConfidence': 0,
+                            'semiMinorConfidence': 0,
+                            'semiMajorOrientation': 0
                         }
                     }
                     )
@@ -357,6 +388,7 @@ class Drone:
                 self.latitude = latitude
                 self.longitude = longitude
                 self.generate_cam()
+                self.live_server_send()
 
                 #print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
                 time.sleep(0.5)

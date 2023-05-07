@@ -97,6 +97,7 @@ class Drone:
                     'drone_id': self.id, 
                     'latitude': self.latitude, 
                     'longitude': self.longitude, 
+                    'altitude': self.pos_z,
                     'heading': self.heading, 
                     'horizontal_velocity': sqrt(self.vel_x**2 + self.vel_y**2),
                     'probable_collision_points': [

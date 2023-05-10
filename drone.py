@@ -2,7 +2,7 @@ import json
 import time
 import paho.mqtt.client as mqtt
 
-from math import sqrt, atan2, pi, sin, cos
+from math import sqrt, atan2, pi, sin, cos, radians, degrees
 from haversine import haversine, Unit, inverse_haversine
 from sympy.geometry import Point, Point2D, Line, Point3D
 from threading import Thread
@@ -73,6 +73,7 @@ class Drone:
         self.coll_avd_active: bool = False
         self.coll_point: Point3D = None
         self.coll_denm_seq: int = 0
+        self.coll_denm_awareness: dict = {}
 
         t1: Thread = Thread(target=self.go)
         t1.start()
@@ -114,7 +115,7 @@ class Drone:
         cam_stationID = message['stationID']
         cam_latitude = message['latitude']
         cam_longitude = message['longitude']
-        cam_heading = message['heading']
+        cam_heading = radians(message['heading'])
         cam_altitude = message['altitude']
         cam_speed = message['speed']
 
@@ -204,6 +205,18 @@ class Drone:
             self.mqtt_client.publish("vanetza/in/denm",m)  
             self.coll_denm_seq += 1
 
+    def process_denm_message(self, message):
+        message = message['fields']['denm']
+        denm_stationID = message['management']['actionID']['originatingStationID']
+
+        if message['situation']['eventType']['causeCode'] != 97:
+            return
+        
+        event_position = message['management']['eventPosition']
+        denm_collision_point: Point2D = Point2D(event_position['longitude'], event_position['latitude']).evalf()
+
+        print(f'Drone {self.id} received denm from {denm_stationID} at {denm_collision_point}')
+
     def awareness_update(self, stationID: int):       
         current_time = time.time()
         
@@ -216,9 +229,6 @@ class Drone:
         for stale in stales:
             del self.cam_awareness[stale]
             print(f'Drone {self.id} removed stale entry for drone {stale}')
-
-    def process_denm_message(self, message):
-        pass     
 
     def go(self):
         
@@ -413,7 +423,7 @@ class Drone:
             m["altitude"] = self.pos_z
             m["longitude"] = self.longitude
             m["latitude"] = self.latitude
-            m["heading"] = self.heading
+            m["heading"] = degrees(self.heading)
             m["speed"] = sqrt(self.vel_x**2 + self.vel_y**2)
             m["speedLimiter"] = m["speed"] == self.flightplan["max_horizontal_velocity"]
             m["cruiseControl"] = True

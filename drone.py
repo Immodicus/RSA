@@ -121,12 +121,7 @@ class Drone:
 
         self.awareness_update(cam_stationID)
 
-        y = haversine(self.origin, (cam_latitude, self.origin[1]), unit=Unit.METERS)
-        x = haversine(self.origin, (self.origin[0], cam_longitude), unit=Unit.METERS)
-        if cam_latitude < self.origin[0]:
-            y = -y
-        if cam_longitude < self.origin[1]:
-            x = -x
+        y, x = self.get_position_from_lat_lon(cam_latitude, cam_longitude)
 
         print(f'Drone {self.id} knows Drone {cam_stationID} is at {(x, y)} heading {cam_heading}')
 
@@ -143,8 +138,7 @@ class Drone:
         if len(intersection) > 0:   
             collision_point = intersection[0].evalf()
             
-            heading_origin = get_heading_from_origin(collision_point.x, collision_point.y)
-            collision_latitude, collision_longitude = inverse_haversine(self.origin, sqrt(collision_point.x**2 + collision_point.y**2), heading_origin, unit=Unit.METERS)
+            collision_latitude, collision_longitude = self.get_lat_lon_from_position(collision_point.x, collision_point.y)
 
             if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
                 return
@@ -381,8 +375,7 @@ class Drone:
                 if x_arrived and y_arrived and (z_arrived or state != 'landing'):
                     alive = False
 
-                heading_origin = get_heading_from_origin(pos_x, pos_y)
-                latitude, longitude = inverse_haversine(self.origin, sqrt(pos_x**2 + pos_y**2), heading_origin, unit=Unit.METERS)
+                latitude, longitude = self.get_lat_lon_from_position(pos_x, pos_y)
 
                 positions.append({'x': pos_x, 'y': pos_y, 'z': pos_z})
                 velocities.append({'x': vel_x, 'y': vel_y, 'z': vel_y})
@@ -433,6 +426,20 @@ class Drone:
 
             m = json.dumps(m)
             self.mqtt_client.publish("vanetza/in/cam",m)  
+
+    def get_lat_lon_from_position(self, pos_x: float, pos_y: float):
+        heading_origin = get_heading_from_origin(pos_x, pos_y)
+        return inverse_haversine(self.origin, sqrt(pos_x**2 + pos_y**2), heading_origin, unit=Unit.METERS)
+    
+    def get_position_from_lat_lon(self, lat: float, lon: float):
+        y = haversine(self.origin, (lat, self.origin[1]), unit=Unit.METERS)
+        x = haversine(self.origin, (self.origin[0], lon), unit=Unit.METERS)
+        if lat < self.origin[0]:
+            y = -y
+        if lon < self.origin[1]:
+            x = -x
+
+        return y, x
 
 def get_heading_from_origin(pos_x: float, pos_y: float) -> float:
     heading_origin = atan2(pos_x, pos_y)

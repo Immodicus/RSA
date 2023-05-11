@@ -1,6 +1,9 @@
 import socket
 import _thread
 import sys
+import json
+
+drone_data: dict = {}
 
 def client_echo_thread(client_socket: socket.socket, addr):
     while True:
@@ -8,15 +11,20 @@ def client_echo_thread(client_socket: socket.socket, addr):
         if not message: break
         
         message_text = message.decode("utf-8")
-        print(f"Received {message_text} from {addr}")
+        message_json = json.loads(message_text)
+        drone_data[message_json['drone_id']] = message_json
+
+        #print(f"Received {message_text} from {addr}")
+        t = json.dumps(list(drone_data.values()), indent=4)
+        print(f'drone_data: {t}')
     
     print(f"Closing connection to {addr}")
     client_socket.close()
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('', int(sys.argv[1])))
+server_socket.bind(('0.0.0.0', int(sys.argv[1])))
 server_socket.listen()
-print(f"Starting TCP echo server at port {int(sys.argv[1])}")
+print(f"Starting TCP server at port {int(sys.argv[1])}")
 
 while True:
     client_socket, addr = server_socket.accept()

@@ -295,7 +295,7 @@ class Drone:
         collision_point = collision_point.evalf()
         avoidance_path = [point.evalf() for point in avoidance_path]
         
-        with open('../examples/in_denm.json', 'r') as f:
+        with open('messages/in_denm.json', 'r') as f:
             m = json.load(f)
             
             m['management']['actionID']['originatingStationID'] = self.id
@@ -580,7 +580,7 @@ class Drone:
 
 
     def generate_cam(self):
-        with open('../examples/in_cam.json', 'r') as f:
+        with open('messages/in_cam.json', 'r') as f:
             m = json.load(f)
 
             m["altitude"] = self.pos_z

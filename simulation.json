@@ -36,6 +36,11 @@
                         "altitude": 120
                     },
                     {
+                        "longitude": 3750,
+                        "latitude": 1875,
+                        "altitude": 120
+                    },
+                    {
                         "longitude": 5000,
                         "latitude": 2500,
                         "altitude": 15
@@ -62,6 +67,11 @@
                     {
                         "longitude": 2500,
                         "latitude": 1250,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 1250,
+                        "latitude": 1875,
                         "altitude": 120
                     },
                     {

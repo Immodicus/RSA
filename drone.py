@@ -2,6 +2,7 @@ import json
 import time
 import paho.mqtt.client as mqtt
 
+from drone_action import Action
 from math import sqrt, atan2, pi, sin, cos, radians, degrees
 from haversine import haversine, Unit, inverse_haversine
 from sympy.geometry import Point, Point2D, Line, Point3D
@@ -68,10 +69,11 @@ class Drone:
         self.time: float = time.time()
 
         self.cam_awareness: dict = {}
-
-        self.coll_avd_path = None
+        self.coll_points: list = []
         self.coll_avd_active: bool = False
-        self.coll_point: Point3D = None
+        self.coll_avd_point: Point3D = None
+        self.coll_avd_action: Action = None
+        self.coll_avd_action_value = None
         self.coll_denm_seq: int = 0
         self.coll_denm_awareness: dict = {}
 
@@ -86,32 +88,30 @@ class Drone:
         print(f'Drone {self.id} connected to live server')
 
     def live_server_send(self):
-        collision_point = None
-        if self.coll_point != None:
-            collision_point = {
-                            'latitude': float(self.coll_point.y), 
-                            'longitude': float(self.coll_point.x), 
-                            'altitude': float(self.coll_point.x)
-                        }
+        collision_points: list = []
+        for coll_point in self.coll_points:
+            collision_points.append({
+                            'latitude': float(coll_point.x), 
+                            'longitude': float(coll_point.y), 
+                            'altitude': float(coll_point.z)
+                        })
         
         data = {
-                    'drone_id': self.id, 
-                    'latitude': self.latitude, 
-                    'longitude': self.longitude, 
-                    'altitude': self.pos_z,
-                    'heading': self.heading, 
-                    'horizontal_velocity': sqrt(self.vel_x**2 + self.vel_y**2),
-                    'probable_collision_points': [
-                        collision_point
-                    ]
+                'drone_id': self.id, 
+                'latitude': self.latitude, 
+                'longitude': self.longitude, 
+                'altitude': self.pos_z,
+                'heading': self.heading, 
+                'horizontal_velocity': sqrt(self.vel_x**2 + self.vel_y**2),
+                'probable_collision_points': collision_points
                 }
 
         json_text = json.dumps(data, indent=4)
         self.live_server.sendall(bytes(json_text,encoding="utf-8"))
 
     def process_cam_message(self, message):
-        #print(f'Drone {self.id} received message: {json.dumps(message, indent=4)}')
 
+        # get relevant CAM message fields
         cam_stationID = message['stationID']
         cam_latitude = message['latitude']
         cam_longitude = message['longitude']
@@ -119,48 +119,177 @@ class Drone:
         cam_altitude = message['altitude']
         cam_speed = message['speed']
 
-        self.awareness_update(cam_stationID)
+        current_time = time.time()
 
+        # process CAM sender position from latitude and longitude
         y, x = self.get_position_from_lat_lon(cam_latitude, cam_longitude)
 
-        print(f'Drone {self.id} knows Drone {cam_stationID} is at {(x, y)} heading {cam_heading}')
+        print(f'Drone {self.id} knows Drone {cam_stationID} is at {(x, y, cam_altitude)} heading {cam_heading}')
 
+        # update CAM sender position or remove if stale
+        if cam_stationID not in self.cam_awareness:
+            print(f'Drone {self.id} is now aware of drone {cam_stationID}')
+        
+        self.cam_awareness[cam_stationID] = {
+            'received_at': current_time, 
+            'x': x,
+            'y': y,
+            'z': cam_altitude,
+            'h_speed': cam_speed,
+            'heading': cam_heading,
+            }
+        
+        stales = [stationID for stationID, awareness in self.cam_awareness.items() if current_time - awareness['received_at'] > self.cam_stale_time]
+        
+        for stale in stales:
+            del self.cam_awareness[stale]
+            print(f'Drone {self.id} removed stale entry for drone {stale}')
+
+        self.collision_cleanup()
+        self.collision_detection()
+
+    def collision_cleanup(self):
+        stale = []
+        for collision_point in self.coll_points:
+            if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
+                stale.append(collision_point)
+            elif (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
+                stale.append(collision_point)
+        
+        for s in stale:
+            self.coll_points.remove(s)
+            print(f'Drone {self.id} removed stale collision point: {s}')
+
+    def collision_detection(self):
+        # predict my future path based on my heading and position
         my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
-        cam_line = Line(Point(x, y), Point(x + sin(cam_heading), y + cos(cam_heading)))     
 
-        if sqrt((self.pos_x - x)**2 + (self.pos_y - y)**2) > self.radio_range:
+        for cam_stationID, cam_data in self.cam_awareness.items():
+            cam_heading = cam_data['heading']
+            cam_x = cam_data['x']
+            cam_y = cam_data['y']
+            cam_z = cam_data['z']
+            cam_speed = cam_data['h_speed']
+            
+            # predict the future path of this drone based on its heading and position
+            cam_line = Line(Point(cam_x, cam_y), Point(cam_x + sin(cam_heading), cam_y + cos(cam_heading)))     
+
+            # if we're to far away there's no point in trying to detect a collision given possible future 
+            # heading changes
+            if sqrt((self.pos_x - cam_x)**2 + (self.pos_y - cam_y)**2) > self.radio_range:
+                return
+            
+            # if the altitude delta is below the defined threshold we're fine
+            if abs(self.pos_z - cam_z) > self.min_safe_altitude_delta:
+                return
+
+            # calculate 2D intersection between our lines
+            intersection: list[Point2D] = my_line.intersection(cam_line)
+            if len(intersection) > 0:   
+                collision_point = intersection[0].evalf()
+
+                if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
+                    continue
+                
+                if (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
+                    continue
+
+                # calculate time to the collision point for me and the other drone
+                my_time = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2) / sqrt(self.vel_x**2 + self.vel_y**2)
+                cam_time = sqrt((cam_x - collision_point.x)**2 + (cam_y - collision_point.y)**2) / cam_speed
+
+                # if we arrive at the collision point at very different times we're fine
+                if abs(my_time - cam_time) > 3:
+                    continue
+
+                # calculate average altitude between our altitudes
+                collision_altitude = round((self.pos_z + cam_z) / 2)
+                collision_point = Point3D(collision_point.x, collision_point.y, collision_altitude).evalf()
+
+                # determine if this collision point is already known
+                found = False
+                for point in self.coll_points:
+                    if abs(float(point.x) - collision_point.x) < 5 and abs(float(point.x) - collision_point.x) < 5:
+                        found = True
+                
+                # if we weren't aware of it, now we are
+                if not found:
+                    print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
+                    self.coll_points.append(collision_point)
+
+                    if not self.coll_avd_active:
+                        self.make_a_decision()
+
+    def make_a_decision(self):
+        # determine the closest collision point known to us
+        closest_point_distance = 2**64-1
+        closest_point = None
+        for collision_point in self.coll_points:
+            distance = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2)
+            if distance < closest_point_distance:
+                closest_point_distance = distance
+                closest_point = collision_point
+
+        assert closest_point != None     
+        assert self.coll_avd_active == False
+        
+        # update collision avoidance status
+        self.coll_avd_active = True
+        self.coll_avd_point = collision_point
+        self.coll_avd_action = Action.ALT_INCR
+        self.coll_avd_action_value = self.pos_z + 5
+            
+        # send a denm message
+        collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(collision_point.x), float(collision_point.y))
+        self.generate_denm(Point3D(collision_longitude, collision_latitude, collision_point.z), [Point3D(collision_longitude, collision_latitude, self.pos_z + 5)])
+        
+        print(f'Drone {self.id} sending denm {collision_point.x, collision_point.y, self.pos_z + 5}')
+
+    def update_decision(self):
+        print(f'Drone {self.id} update_decision')
+        if not self.coll_avd_active:
             return
         
-        if abs(self.pos_z - cam_altitude) > self.min_safe_altitude_delta:
+        restrictions = []
+
+        # find denm messages from other drones regarding the active collision point
+        for cam_stationID, cam_data in self.coll_denm_awareness.items():
+            event_x = cam_data['event_x']
+            event_y = cam_data['event_y']
+            decision_z = cam_data['decision_z']
+
+            if abs(self.coll_avd_point.x - event_x) < 5 and abs(self.coll_avd_point.y - event_y) < 5:
+                if cam_stationID > self.id:
+                    restrictions.append((cam_stationID, decision_z))
+
+        print(f'Drone {self.id} restrictions: {restrictions}')
+
+        # we're good
+        if len(restrictions) == 0:
             return
-
-        intersection: list[Point2D] = my_line.intersection(cam_line)
-        if len(intersection) > 0:   
-            collision_point = intersection[0].evalf()
-            
-            collision_latitude, collision_longitude = self.get_lat_lon_from_position(collision_point.x, collision_point.y)
-
-            if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
-                return
-            
-            if (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
-                return
-
-            my_time = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2) / sqrt(self.vel_x**2 + self.vel_y**2)
-            cam_time = sqrt((x - collision_point.x)**2 + (y - collision_point.y)**2) / cam_speed
-
-            if not self.coll_avd_active:
-                print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
-                self.coll_avd_active = True
-                self.coll_point = Point3D(collision_latitude, collision_longitude, cam_altitude).evalf()
+        
+        # we might need to change our decision
+        # if there's only one restriction and it's the same as us do the opposite
+        changed = False
+        if len(restrictions) == 1:
+            print(f'Drone: {self.id} {self.coll_avd_point}')
+            decision_z = restrictions[0][1]
+            if self.coll_avd_action == Action.ALT_INCR and decision_z > self.coll_avd_point.z:
+                self.coll_avd_action = Action.ALT_DEC
+                self.coll_avd_action_value = self.pos_z - 5
                 
-                decision_altitude = None
-                if self.id > cam_stationID:
-                    decision_altitude = self.pos_z + 5
-                else:
-                    decision_altitude = self.pos_z - 5
+                changed = True
+            elif self.coll_avd_action == Action.ALT_DEC and decision_z < self.coll_avd_point.z:
+                self.coll_avd_action = Action.ALT_INCR
+                self.coll_avd_action_value = self.pos_z - 5
 
-                self.generate_denm(Point3D(collision_latitude, collision_longitude, cam_altitude), [Point3D(collision_latitude, collision_longitude, decision_altitude)])
+                changed = True
+
+        # generate new DENM
+        if changed:
+            print(f'Drone {self.id} changed decision to {self.coll_avd_action}: {self.coll_avd_action_value}')
+            collision_latitude, collision_longitude = self.get_lat_lon_from_position(self.coll_avd_point.x, self.coll_avd_point.y)
+            self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
 
     def generate_denm(self, collision_point: Point3D, avoidance_path: list[Point3D]):
         collision_point = collision_point.evalf()
@@ -210,19 +339,33 @@ class Drone:
         denm_collision_point: Point2D = Point2D(event_position['longitude'], event_position['latitude']).evalf()
 
         print(f'Drone {self.id} received denm from {denm_stationID} at {denm_collision_point}')
+        
+        denm_sequence_number = message['management']['actionID']['sequenceNumber']
 
-    def awareness_update(self, stationID: int):       
-        current_time = time.time()
+        event_latitude = event_position['latitude']
+        event_longitude = event_position['longitude']
+        event_altitude = event_position['altitude']['altitudeValue']
+
+        #read and process event positioning and decision data
+        event_y, event_x = self.get_position_from_lat_lon(event_latitude, event_longitude)
+        event_z = event_position['altitude']['altitudeValue']
+
+        decision_point = message['alacarte']['roadWorks']['recommendedPath'][0]
+        decision_y, decision_x = self.get_position_from_lat_lon(decision_point['latitude'], decision_point['longitude'])
+        decision_z = decision_point['altitude']['altitudeValue']
         
-        if stationID not in self.cam_awareness:
-            print(f'Drone {self.id} is now aware of drone {stationID}')
-        self.cam_awareness[stationID] = time.time()
+        # update denm awareness
+        self.coll_denm_awareness[denm_stationID] = {
+            'sequence_number': denm_sequence_number,
+            'event_x': event_x,
+            'event_y': event_y,
+            'event_z': event_z,
+            'decision_x': decision_x,
+            'decision_y': decision_y,
+            'decision_z': decision_z
+            }
         
-        stales = [stationID for stationID, lastCam in self.cam_awareness.items() if current_time - lastCam > self.cam_stale_time]
-        
-        for stale in stales:
-            del self.cam_awareness[stale]
-            print(f'Drone {self.id} removed stale entry for drone {stale}')
+        self.update_decision()
 
     def go(self):
         
@@ -278,6 +421,12 @@ class Drone:
                 last_update = current_time
                 
                 heading = get_heading_between_points(pos_x, t_pos_x, pos_y, t_pos_y)
+
+                # if collision avoidance is active override settings
+                # only target altitude for now
+                if self.coll_avd_active == True:
+                    t_pos_z = self.coll_avd_action_value
+                    z_mov = t_pos_z > pos_z
 
                 current_velocity = sqrt( vel_x**2 + vel_y**2 )
                 current_velocity = current_velocity + max_horizontal_acceleration * time_delta  
@@ -375,6 +524,28 @@ class Drone:
                 if x_arrived and y_arrived and (z_arrived or state != 'landing'):
                     alive = False
 
+                if self.coll_avd_active == True:
+                    # if we're past the collision point, disable collision avoidance and remove restricitons
+                    if (vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x):
+                        print(f'Drone {self.id} disabling collision avoidance')
+                        self.coll_avd_active = False
+                        t_pos_x = waypoint['longitude']
+                        t_pos_y = waypoint['latitude']
+                        t_pos_z = waypoint['altitude']
+                        x_mov = t_pos_x > pos_x
+                        y_mov = t_pos_y > pos_y
+                        z_mov = t_pos_z > pos_z
+                
+                    elif (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y):
+                        print(f'Drone {self.id} disabling collision avoidance')
+                        self.coll_avd_active = False
+                        t_pos_x = waypoint['longitude']
+                        t_pos_y = waypoint['latitude']
+                        t_pos_z = waypoint['altitude']
+                        x_mov = t_pos_x > pos_x
+                        y_mov = t_pos_y > pos_y
+                        z_mov = t_pos_z > pos_z
+
                 latitude, longitude = self.get_lat_lon_from_position(pos_x, pos_y)
 
                 positions.append({'x': pos_x, 'y': pos_y, 'z': pos_z})
@@ -394,7 +565,6 @@ class Drone:
                 self.generate_cam()
                 self.live_server_send()
 
-                #print(f"x: {pos_x} y: {pos_y} z: {pos_z} vx: {vel_x} vy: {vel_y} vz: {vel_z}")
                 time.sleep(0.5)
         
         with open(f'./drone_{self.id}_pos.json', 'w') as outfile:

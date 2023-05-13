@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import SubmitField
 
+
+# Store the drone data in a global dictionary
+drone_data_live = {}
 
 
 app = Flask(__name__)
@@ -16,7 +19,8 @@ class DroneForm(FlaskForm):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     form = DroneForm()
-    return render_template('home.html', form=form)
+    
+    return render_template('home.html', form=form, drone_data_live=drone_data_live)
 
 
 @app.route('/drone', methods=['POST'])
@@ -30,5 +34,16 @@ def drone():
         pass
     return 'OK'
 
+    # Get the drone data from the POST request
+    drone_data_live = request.get_json()
+
+    # Store the drone data in the global dictionary
+    drone_id = drone_data_live['drone_id']
+    drone_data_live[drone_id] = drone_data_live
+
+    # Send a JSON response with the success message
+    response = {'success': True}
+    return jsonify(response)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='localhost', port=8000, debug=True)

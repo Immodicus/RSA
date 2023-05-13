@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>RSA Project 2223</title>
+  <title>RSA Project 2223</title>
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -11,21 +11,21 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
 
-    <!-- api mapbox -->
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+  <!-- api mapbox -->
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
 
-    <!-- api jquery map -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='map.css') }}" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+  <!-- api jquery map -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='map.css') }}" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-    crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
     integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
     crossorigin=""></script>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    
-    
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+
 
 </head>
 
@@ -34,16 +34,17 @@
     <!-- place navbar here -->
   </header>
   <main>
-    
 
-      <div class="container-fluid">
-        <div class="row">
-             <!-- Right column content here -->
-             <div class="col-2">
-              <h5>Status:</h5>
-              <i>The Simulation drone is running.</i><br><br>
-              <h5>TimeStemp:</h5>
-              <i>105s</i><br><br>
+
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Right column content here -->
+        <div class="col-2">
+          <h5>Status:</h5>
+          <i>The Simulation drone is running.</i><br><br>
+          <h5>TimeStemp:</h5>
+          <i>105s</i><br><br>
+          <!--
               <h5>Drone:</h5>
               <i>Drone 1</i><br><br>
               <h5>Location:</h5>
@@ -53,58 +54,131 @@
               <h5>Altitude:</h5>
               <i>0.0 m</i><br><br>
               <h5>Distance:</h5>
-              <i>0.0 m</i><br><br>
-              <h5>Progress:</h5>
-              <div class="progress">
-                <div class="progress-bar" style="width: 100%"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">100%</div>
-              </div><br><br>
-              <div>
-                <form method="POST">
-                  {{ form.csrf_token }}
-                  <span style="width:50%;">{{ form.start }}</span>
-                  <span style="width:50%;">{{ form.stop }}</span>
-                </form>
-              </div>
-            </div>
-          <!-- Left column content here -->
-          <div class="col-10">
-            <div id="map" class="justify-content-center" style='width: 100%; height: 800px;'></div> <br>
-            <h4>RSA Project - Autonomous Drone Crash Avoidance System</h4>
-          </div>
-        
-        </div>
-    
+              <i>0.0 m</i><br><br>-->
+          <!--<table class="table">
+                <thead>
+                  <tr>
+                    <th>Drone ID</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Altitude</th>
+                    <th>Heading</th>
+                    <th>Horizontal Velocity</th>
+                    <th>Probable Collision Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{drone_id}}</td>
+                    <td>{{latitude}}</td>
+                    <td>{{longitude}}</td>
+                    <td>{{altitude}}</td>
+                    <td>{{heading}}</td>
+                    <td>{{horizontal_velocity}}</td>
+                    <td>{{probable_collision_points}}</td>
+                  </tr>
+                </tbody>
+              </table>-->
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Drone1</th>
+                <th scope="col">Drone2</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Altitude</th>
+                <td>{{ drone_data_live.altitude }}</td>
+                <td>{{ drone_data_live.altitude }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Latitude</th>
+                <td>{{ drone_data_live.latitude }}</td>
+                <td>{{ drone_data_live.latitude }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Longitude</th>
+                <td>{{ drone_data_live.longitude }}</td>
+                <td>{{ drone_data_live.longitude }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Horizontal Velocity</th>
+                <td>{{ drone_data_live.horizontal_velocity }}</td>
+                <td>{{ drone_data_live.horizontal_velocity }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Heading</th>
+                <td>{{ drone_data_live.heading }}</td>
+                <td>{{ drone_data_live.heading }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Prob. of collision (Latitude)</th>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <th scope="row">Prob. of collision (Longitude)</th>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
 
- 
+          <h5>Progress:</h5>
+          <div class="progress">
+            <div class="progress-bar" style="width: 100%" role="progressbar" aria-valuenow="100" aria-valuemin="0"
+              aria-valuemax="100">100%</div>
+          </div><br><br>
+          <div>
+            <form method="POST">
+              {{ form.csrf_token }}
+              <span style="width:50%;">{{ form.start }}</span>
+              <span style="width:50%;">{{ form.stop }}</span>
+            </form>
+          </div>
+        </div>
+        <!-- Left column content here -->
+        <div class="col-10">
+          <div id="map" class="justify-content-center" style='width: 100%; height: 800px;'></div> <br>
+          <h4>RSA Project - Autonomous Drone Crash Avoidance System</h4>
+        </div>
+
+      </div>
+
+
+
   </main>
   <footer>
-    <script src="static/map.js" /></script>
+    <script src="static/map.js" />
+    </script>
     <script>
       var rsuIcon = L.icon({
-          iconUrl: "static/antenna.png",
-          iconSize: [16, 16],
-          iconAnchor: [18, 39],
-          popupAnchor: [10, -35]
-          
-      });
-      
-      rsu.forEach(function(r) {
-      L.marker([r[1], r[2]], {icon: rsuIcon}).addTo(map)
-        .bindTooltip("rsu_" + r[0], {permanent: false});
+        iconUrl: "static/antenna.png",
+        iconSize: [16, 16],
+        iconAnchor: [18, 39],
+        popupAnchor: [10, -35]
+
       });
 
-      
-  </script>
+      rsu.forEach(function (r) {
+        L.marker([r[1], r[2]], { icon: rsuIcon }).addTo(map)
+          .bindTooltip("rsu_" + r[0], { permanent: false });
+      });
+
+
+    </script>
     <!-- place footer here -->
   </footer>
   <!-- Bootstrap JavaScript Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
     integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous">
-  </script>
+    </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.min.js"
     integrity="sha384-7VPbUDkoPSGFnVtYi0QogXtr74QeVeeIs99Qfg5YCF+TidwNdjvaKZX19NZ/e6oz" crossorigin="anonymous">
-  </script>
+    </script>
 </body>
 
 </html>

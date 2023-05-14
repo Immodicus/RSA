@@ -4,10 +4,6 @@ import sys
 import json
 import requests
 
-from flask import Flask, render_template, request
-from flask_wtf import FlaskForm
-from wtforms import SubmitField
-
 
 drone_data: dict = {}
 
@@ -42,7 +38,7 @@ def client_echo_thread(client_socket: socket.socket, addr):
         #print("Drone Probable collision: " + str(message_json['probable_collision_points']['0']['latitude']) + ", " + str(message_json['probable_collision_points']['0']['longitude']))
 
         # Create a dictionary with the drone data
-        drone_data_line = {
+        drone_data_live = {
             'drone_id': drone_id,
             'latitude': latitude,
             'longitude': longitude,
@@ -50,6 +46,8 @@ def client_echo_thread(client_socket: socket.socket, addr):
             'heading': heading,
             'horizontal_velocity': horizontal_velocity
         }
+    
+        
 
         # Send a POST request to the Flask server with the drone data
         requests.post('http://localhost:8000/', json=drone_data_live)

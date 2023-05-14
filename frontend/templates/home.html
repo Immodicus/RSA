@@ -79,6 +79,7 @@
                   </tr>
                 </tbody>
               </table>-->
+              
           <table class="table">
             <thead>
               <tr>
@@ -88,10 +89,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
+              
+              <tr>  
                 <th scope="row">Altitude</th>
-                <td>{{ drone_data_live.altitude }}</td>
-                <td>{{ drone_data_live.altitude }}</td>
+                {% for drone_id, data in drone_data_live.items() %}
+                <td>{{ data['latitude'] }}</td>
+                <td>{{ data['latitude'] }}</td>
+                {% endfor %}
               </tr>
               <tr>
                 <th scope="row">Latitude</th>
@@ -123,6 +127,7 @@
                 <td></td>
                 <td></td>
               </tr>
+             
             </tbody>
           </table>
 

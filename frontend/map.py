@@ -26,7 +26,7 @@ def home():
         drone_data_live = request.get_json()
         drone_id = drone_data_live['drone_id']
         drone_data_live[drone_id] = drone_data_live
-        print(drone_data_live)
+        #print(drone_data_live['latitude'])
     return render_template('home.html', form=form, drone_data_live=drone_data_live)
 
 

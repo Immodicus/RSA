@@ -92,32 +92,30 @@
               
               <tr>  
                 <th scope="row">Altitude</th>
-                {% for drone_id, data in drone_data_live.items() %}
-                <td>{{ data['latitude'] }}</td>
-                <td>{{ data['latitude'] }}</td>
-                {% endfor %}
+                <td>{{ drone_data_live['altitude'] }}</td>
+                <td>{{ drone_data_live['altitude'] }}</td>
               </tr>
               <tr>
                 <th scope="row">Latitude</th>
-                <td>{{ drone_data_live.latitude }}</td>
-                <td>{{ drone_data_live.latitude }}</td>
+                <td>{{ drone_data_live['latitude'] }}</td>
+                <td>{{ drone_data_live['latitude'] }}</td>
               </tr>
               <tr>
                 <th scope="row">Longitude</th>
-                <td>{{ drone_data_live.longitude }}</td>
-                <td>{{ drone_data_live.longitude }}</td>
+                <td>{{ drone_data_live['longitude'] }}</td>
+                <td>{{ drone_data_live['longitude'] }}</td>
               </tr>
               <tr>
                 <th scope="row">Horizontal Velocity</th>
-                <td>{{ drone_data_live.horizontal_velocity }}</td>
-                <td>{{ drone_data_live.horizontal_velocity }}</td>
+                <td>{{ drone_data_live['horizontal_velocity'] }}</td>
+                <td>{{ drone_data_live['horizontal_velocity'] }}</td>
               </tr>
               <tr>
                 <th scope="row">Heading</th>
-                <td>{{ drone_data_live.heading }}</td>
-                <td>{{ drone_data_live.heading }}</td>
+                <td>{{ drone_data_live['heading'] }}</td>
+                <td>{{ drone_data_live['heading'] }}</td>
               </tr>
-              <tr>
+             <!-- <tr>
                 <th scope="row">Prob. of collision (Latitude)</th>
                 <td></td>
                 <td></td>
@@ -126,7 +124,7 @@
                 <th scope="row">Prob. of collision (Longitude)</th>
                 <td></td>
                 <td></td>
-              </tr>
+              </tr>-->
              
             </tbody>
           </table>

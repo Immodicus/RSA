@@ -236,14 +236,19 @@ class Drone:
         # update collision avoidance status
         self.coll_avd_active = True
         self.coll_avd_point = collision_point
-        self.coll_avd_action = Action.ALT_INCR
-        self.coll_avd_action_value = self.pos_z + 5
+        
+        if self.pos_z >= float(closest_point.z):
+            self.coll_avd_action = Action.ALT_INCR
+            self.coll_avd_action_value = float(closest_point.z) + self.min_safe_altitude_delta / 2 + 0.5
+        else:
+            self.coll_avd_action = Action.ALT_DEC
+            self.coll_avd_action_value = float(closest_point.z) - self.min_safe_altitude_delta / 2 - 0.5
             
         # send a denm message
         collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(collision_point.x), float(collision_point.y))
-        self.generate_denm(Point3D(collision_longitude, collision_latitude, collision_point.z), [Point3D(collision_longitude, collision_latitude, self.pos_z + 5)])
+        self.generate_denm(Point3D(collision_longitude, collision_latitude, collision_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
         
-        print(f'Drone {self.id} sending denm {collision_point.x, collision_point.y, self.pos_z + 5}')
+        print(f'Drone {self.id} sending denm {collision_point.x, collision_point.y, self.coll_avd_action_value}')
 
     def update_decision(self):
         print(f'Drone {self.id} update_decision')
@@ -256,11 +261,12 @@ class Drone:
         for denm_stationID, denm_data in self.coll_denm_awareness.items():
             event_x = denm_data['event_x']
             event_y = denm_data['event_y']
+            event_z = denm_data['event_z']
             decision_z = denm_data['decision_z']
 
             if abs(self.coll_avd_point.x - event_x) < 5 and abs(self.coll_avd_point.y - event_y) < 5:
                 if denm_stationID > self.id:
-                    restrictions.append((denm_stationID, decision_z))
+                    restrictions.append((denm_stationID, decision_z, event_z))
 
         print(f'Drone {self.id} restrictions: {restrictions}')
 
@@ -274,14 +280,15 @@ class Drone:
         if len(restrictions) == 1:
             print(f'Drone: {self.id} {self.coll_avd_point}')
             decision_z = restrictions[0][1]
+            event_z = restrictions[0][2]
             if self.coll_avd_action == Action.ALT_INCR and decision_z > self.coll_avd_point.z:
                 self.coll_avd_action = Action.ALT_DEC
-                self.coll_avd_action_value = self.pos_z - 5
+                self.coll_avd_action_value = event_z - self.min_safe_altitude_delta / 2 - 0.5
                 
                 changed = True
             elif self.coll_avd_action == Action.ALT_DEC and decision_z < self.coll_avd_point.z:
                 self.coll_avd_action = Action.ALT_INCR
-                self.coll_avd_action_value = self.pos_z + 5
+                self.coll_avd_action_value = event_z + self.min_safe_altitude_delta / 2 + 0.5
 
                 changed = True
 
@@ -526,7 +533,7 @@ class Drone:
 
                 if self.coll_avd_active == True:
                     # if we're past the collision point, disable collision avoidance and remove restricitons
-                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) or (
+                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) and (
                         (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y)
                         ):
                         print(f'Drone {self.id} disabling collision avoidance')

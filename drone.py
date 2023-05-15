@@ -151,9 +151,9 @@ class Drone:
     def collision_cleanup(self):
         stale = []
         for collision_point in self.coll_points:
-            if (self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x):
-                stale.append(collision_point)
-            elif (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y):
+            if ((self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x)) or (
+                (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y)
+               ):
                 stale.append(collision_point)
         
         for s in stale:
@@ -526,17 +526,9 @@ class Drone:
 
                 if self.coll_avd_active == True:
                     # if we're past the collision point, disable collision avoidance and remove restricitons
-                    if (vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x):
-                        print(f'Drone {self.id} disabling collision avoidance')
-                        self.coll_avd_active = False
-                        t_pos_x = waypoint['longitude']
-                        t_pos_y = waypoint['latitude']
-                        t_pos_z = waypoint['altitude']
-                        x_mov = t_pos_x > pos_x
-                        y_mov = t_pos_y > pos_y
-                        z_mov = t_pos_z > pos_z
-                
-                    elif (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y):
+                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) or (
+                        (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y)
+                        ):
                         print(f'Drone {self.id} disabling collision avoidance')
                         self.coll_avd_active = False
                         t_pos_x = waypoint['longitude']

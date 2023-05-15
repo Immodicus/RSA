@@ -89,7 +89,7 @@ class Drone:
 
     def live_server_send(self):
         collision_points: list = []
-        for coll_point in self.coll_points:
+        for coll_point in [c['point'] for c in self.coll_points]:
             collision_points.append({
                             'latitude': float(coll_point.x), 
                             'longitude': float(coll_point.y), 
@@ -148,17 +148,20 @@ class Drone:
         self.collision_cleanup()
         self.collision_detection()
 
+    # replace me by removing the point when collision avoidance is disabled
     def collision_cleanup(self):
         stale = []
-        for collision_point in self.coll_points:
+        for coll_point in [c for c in self.coll_points if not c['stale']]:
+            collision_point = coll_point['point']
             if ((self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x)) or (
                 (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y)
                ):
-                stale.append(collision_point)
+                stale.append(coll_point)
         
         for s in stale:
-            self.coll_points.remove(s)
-            print(f'Drone {self.id} removed stale collision point: {s}')
+            index = self.coll_points.index(s)
+            self.coll_points[index]['stale'] = True
+            print(f'Drone {self.id} set stale collision point: {s}')
 
     def collision_detection(self):
         # predict my future path based on my heading and position
@@ -208,14 +211,14 @@ class Drone:
 
                 # determine if this collision point is already known
                 found = False
-                for point in self.coll_points:
+                for point in [c['point'] for c in self.coll_points]:
                     if abs(float(point.x) - collision_point.x) < 5 and abs(float(point.x) - collision_point.x) < 5:
                         found = True
                 
                 # if we weren't aware of it, now we are
                 if not found:
                     print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
-                    self.coll_points.append(collision_point)
+                    self.coll_points.append({'point': collision_point, 'stale': False})
 
                     if not self.coll_avd_active:
                         self.make_a_decision()
@@ -224,7 +227,7 @@ class Drone:
         # determine the closest collision point known to us
         closest_point_distance = 2**64-1
         closest_point = None
-        for collision_point in self.coll_points:
+        for collision_point in [c['point'] for c in self.coll_points if not c['stale']]:
             distance = sqrt((self.pos_x - collision_point.x)**2 + (self.pos_y - collision_point.y)**2)
             if distance < closest_point_distance:
                 closest_point_distance = distance

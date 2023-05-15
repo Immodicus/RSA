@@ -253,14 +253,14 @@ class Drone:
         restrictions = []
 
         # find denm messages from other drones regarding the active collision point
-        for cam_stationID, cam_data in self.coll_denm_awareness.items():
-            event_x = cam_data['event_x']
-            event_y = cam_data['event_y']
-            decision_z = cam_data['decision_z']
+        for denm_stationID, denm_data in self.coll_denm_awareness.items():
+            event_x = denm_data['event_x']
+            event_y = denm_data['event_y']
+            decision_z = denm_data['decision_z']
 
             if abs(self.coll_avd_point.x - event_x) < 5 and abs(self.coll_avd_point.y - event_y) < 5:
-                if cam_stationID > self.id:
-                    restrictions.append((cam_stationID, decision_z))
+                if denm_stationID > self.id:
+                    restrictions.append((denm_stationID, decision_z))
 
         print(f'Drone {self.id} restrictions: {restrictions}')
 

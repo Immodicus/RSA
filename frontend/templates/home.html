@@ -44,42 +44,7 @@
           <i>The Simulation drone is running.</i><br><br>
           <h5>TimeStemp:</h5>
           <i>105s</i><br><br>
-          <!--
-              <h5>Drone:</h5>
-              <i>Drone 1</i><br><br>
-              <h5>Location:</h5>
-              <i>37.7749, -122.4194</i><br><br>
-              <h5>Speed:</h5>
-              <i>0.0 m/s</i><br><br>
-              <h5>Altitude:</h5>
-              <i>0.0 m</i><br><br>
-              <h5>Distance:</h5>
-              <i>0.0 m</i><br><br>-->
-          <!--<table class="table">
-                <thead>
-                  <tr>
-                    <th>Drone ID</th>
-                    <th>Latitude</th>
-                    <th>Longitude</th>
-                    <th>Altitude</th>
-                    <th>Heading</th>
-                    <th>Horizontal Velocity</th>
-                    <th>Probable Collision Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{{drone_id}}</td>
-                    <td>{{latitude}}</td>
-                    <td>{{longitude}}</td>
-                    <td>{{altitude}}</td>
-                    <td>{{heading}}</td>
-                    <td>{{horizontal_velocity}}</td>
-                    <td>{{probable_collision_points}}</td>
-                  </tr>
-                </tbody>
-              </table>-->
-              
+
           <table class="table">
             <thead>
               <tr>
@@ -89,8 +54,8 @@
               </tr>
             </thead>
             <tbody>
-              
-              <tr>  
+
+              <tr>
                 <th scope="row">Altitude</th>
                 <td>{{ drone_data_live['altitude'] }}</td>
                 <td>{{ drone_data_live['altitude'] }}</td>
@@ -115,7 +80,7 @@
                 <td>{{ drone_data_live['heading'] }}</td>
                 <td>{{ drone_data_live['heading'] }}</td>
               </tr>
-             <!-- <tr>
+              <!-- <tr>
                 <th scope="row">Prob. of collision (Latitude)</th>
                 <td></td>
                 <td></td>
@@ -125,7 +90,7 @@
                 <td></td>
                 <td></td>
               </tr>-->
-             
+
             </tbody>
           </table>
 
@@ -148,9 +113,15 @@
           <h4>RSA Project - Autonomous Drone Crash Avoidance System</h4>
         </div>
 
-      </div>
+        <h3>Drone Data:</h3>
 
-
+        {% if drone_data_live %}
+        {% for drone_id, drone_data in drone_data_live.items() %}
+        <p>Drone {{ drone_id }} - Latitude: {{ drone_data.latitude }}, Longitude: {{ drone_data.longitude }}</p>
+        {% endfor %}
+        {% else %}
+        <p>No drone data available</p>
+        {% endif %}
 
   </main>
   <footer>
@@ -172,6 +143,8 @@
 
 
     </script>
+
+
     <!-- place footer here -->
   </footer>
   <!-- Bootstrap JavaScript Libraries -->

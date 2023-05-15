@@ -8,7 +8,6 @@ import json, requests
 #drone_data_live = {}
 
 
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'pk.eyJ1IjoieGNsb3VkIiwiYSI6ImNsZ3huZnFiZzAxOHQzcGp1YzExMHM2ZmUifQ.BMxHQXbo6vPPptp_cSAIbw'
 
@@ -22,11 +21,16 @@ class DroneForm(FlaskForm):
 def home():
     form = DroneForm()
     drone_data_live = {}
+    #latitude = 0
+    #longitude = 0
     if request.method == 'POST' and request.content_type == 'application/json':
         drone_data_live = request.get_json()
-        drone_id = drone_data_live['drone_id']
-        drone_data_live[drone_id] = drone_data_live
-        #print(drone_data_live['latitude'])
+        #drone_id = drone_data_live['drone_id']
+        #drone_data_live[drone_id] = drone_data_live
+        #latitude = drone_data_live[drone_id]['latitude']
+        #longitude = drone_data_live[drone_id]['longitude']
+        #print(latitude, longitude)
+    #return "<h1>Latitude: " + str(latitude) + " Longitude: " + str(longitude) + "</h1>"
     return render_template('home.html', form=form, drone_data_live=drone_data_live)
 
 

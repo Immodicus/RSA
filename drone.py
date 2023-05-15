@@ -129,6 +129,10 @@ class Drone:
         # update CAM sender position or remove if stale
         if cam_stationID not in self.cam_awareness:
             print(f'Drone {self.id} is now aware of drone {cam_stationID}')
+            if self.coll_avd_active:
+                closest_point = self.coll_avd_point
+                collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(closest_point.x), float(closest_point.y))
+                self.generate_denm(Point3D(collision_longitude, collision_latitude, closest_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
         
         self.cam_awareness[cam_stationID] = {
             'received_at': current_time, 
@@ -238,7 +242,7 @@ class Drone:
         
         # update collision avoidance status
         self.coll_avd_active = True
-        self.coll_avd_point = collision_point
+        self.coll_avd_point = closest_point
         
         if self.pos_z >= float(closest_point.z):
             self.coll_avd_action = Action.ALT_INCR
@@ -248,10 +252,10 @@ class Drone:
             self.coll_avd_action_value = float(closest_point.z) - self.min_safe_altitude_delta / 2 - 0.5
             
         # send a denm message
-        collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(collision_point.x), float(collision_point.y))
-        self.generate_denm(Point3D(collision_longitude, collision_latitude, collision_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
+        collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(closest_point.x), float(closest_point.y))
+        self.generate_denm(Point3D(collision_longitude, collision_latitude, closest_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
         
-        print(f'Drone {self.id} sending denm {collision_point.x, collision_point.y, self.coll_avd_action_value}')
+        print(f'Drone {self.id} sending denm {closest_point.x, closest_point.y, self.coll_avd_action_value}')
 
     def update_decision(self):
         print(f'Drone {self.id} update_decision')

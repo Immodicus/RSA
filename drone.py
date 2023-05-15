@@ -281,7 +281,7 @@ class Drone:
                 changed = True
             elif self.coll_avd_action == Action.ALT_DEC and decision_z < self.coll_avd_point.z:
                 self.coll_avd_action = Action.ALT_INCR
-                self.coll_avd_action_value = self.pos_z - 5
+                self.coll_avd_action_value = self.pos_z + 5
 
                 changed = True
 

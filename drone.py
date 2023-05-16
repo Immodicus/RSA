@@ -224,10 +224,6 @@ class Drone:
 
                     if not self.coll_avd_active:
                         self.make_a_decision()
-                        # there is a racing condition where update a decision may be called before make a decision completes
-                        # which causes update a decision to return early without computing a new solution
-                        # we should either do this or make make a decision taking into account already received denms
-                        self.update_decision()
 
     def make_a_decision(self):
         # determine the closest collision point known to us
@@ -253,13 +249,9 @@ class Drone:
             self.coll_avd_action = Action.ALT_DEC
             self.coll_avd_action_value = float(closest_point.z) - self.min_safe_altitude_delta / 2 - 0.5
             
-        # send a denm message
-        collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(closest_point.x), float(closest_point.y))
-        self.generate_denm(Point3D(collision_longitude, collision_latitude, closest_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
-        
-        print(f'Drone {self.id} sending denm {closest_point.x, closest_point.y, self.coll_avd_action_value}')
+        self.update_decision(True)
 
-    def update_decision(self):
+    def update_decision(self, send_always=False):
         print(f'Drone {self.id} update_decision')
         if not self.coll_avd_active:
             return
@@ -281,6 +273,11 @@ class Drone:
 
         # we're good
         if len(restrictions) == 0:
+            if send_always:
+                collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(self.coll_avd_point.x), float(self.coll_avd_point.y))
+                self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
+                print(f'Drone {self.id} sending denm {self.coll_avd_point.x, self.coll_avd_point.y, self.coll_avd_action_value}')
+            
             return
         
         # we might need to change our decision

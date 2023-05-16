@@ -6,7 +6,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 var obuIcon = L.icon({
     iconUrl: "static/drone.png",
-    iconSize: [16, 16],
+    iconSize: [32, 32],
     iconAnchor: [18, 39],
     popupAnchor: [10, -35]
 });
@@ -17,39 +17,71 @@ var markers = [];
 setInterval(obuCall, 1000);
 
 function obuCall() {
-    $(document).ready(function(){
+    $(document).ready(function () {
 
         $.ajax({
             url: '/drone-data',
             type: 'get',
             contentType: 'application/json',
             data: {},
-            success: function(response){
+            success: function (response) {
                 markers.forEach(delMarker)
-                
+
                 let i = 0;
-                for(var key in response) {
-                    markers[i] = L.marker([ response[key]["latitude"], response[key]["longitude"]], {icon: obuIcon}).addTo(map)
-                        .bindTooltip(key, {permanent: false});
+                for (var key in response) {
+                    markers[i] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
+                        .bindTooltip(key, { permanent: false });
                     i++;
-                }   
-                
-                let raw_data = document.getElementById("raw-drone-data");
-                raw_data.innerHTML = "<h3>Drone Data: </h3>";
-                for(var key in response) {
-                    raw_data.innerHTML +=  `<h6>Drone ${response[key]["drone_id"]} latitude: ${response[key]["latitude"]} longitude: ${response[key]["longitude"]}</h6>`
                 }
 
-                if (raw_data === "")
-                {
+                let raw_data = document.getElementById("raw-drone-data");
+                raw_data.innerHTML = "<h3>Drone Data: </h3>";
+                for (var key in response) {
+                    raw_data.innerHTML += `<table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="text-danger">Drone </th>
+                        <td scope="col" class="text-danger">${response[key]["drone_id"]}</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+        
+                      <tr>
+                        <th scope="row">Altitude</th>
+                        <td>${response[key]["altitude"]}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Latitude</th>
+                        <td>${response[key]["latitude"]}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Longitude</th>
+                        <td>${response[key]["longitude"]}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Horizontal Velocity</th>
+                        <td>${response[key]["horizontal_velocity"]}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Heading</th>
+                        <td>${response[key]["heading"]}</td>
+                      </tr>        
+                    </tbody>
+                  </table>`
+                }
+
+                if (raw_data === "") {
                     raw_data.innerHTML += "<h6>No data available </h6>";
                 }
             }
         })
 
+
     })
 }
 
-function delMarker(value, index, array){
+function delMarker(value, index, array) {
     map.removeLayer(value)
 }
+
+

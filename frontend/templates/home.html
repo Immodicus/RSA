@@ -42,33 +42,21 @@
         <div class="col-2">
           <h5>Status:</h5>
           <i>The Simulation drone is running.</i><br><br>
-          <h5>TimeStemp:</h5>
-          <i>105s</i><br><br>
 
-          <table class="table">
-            <thead>
-              <tr>
-                <th scope="col"></th>
-                <th scope="col">Drone1</th>
-                <th scope="col">Drone2</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div id="raw-drone-data">
+            <h3>Drone Data:</h3>
+          </div>
 
-
-            </tbody>
-          </table>
-
-          <h5>Progress:</h5>
+          <!-- <h5>Progress:</h5>
           <div class="progress">
             <div class="progress-bar" style="width: 100%" role="progressbar" aria-valuenow="100" aria-valuemin="0"
               aria-valuemax="100">100%</div>
-          </div><br><br>
+          </div>--><br>
           <div>
-            <form method="POST">
+            <form method="POST" action="/">
               {{ form.csrf_token }}
-              <span style="width:50%;">{{ form.start }}</span>
-              <span style="width:50%;">{{ form.stop }}</span>
+              <span style="width:50%;">{{ form.start() }}</span>
+              <span style="width:50%;">{{ form.stop() }}</span>
             </form>
           </div>
         </div>
@@ -78,9 +66,7 @@
           <h4>RSA Project - Autonomous Drone Crash Avoidance System</h4>
         </div>
 
-        <div id="raw-drone-data">
-          <h3>Drone Data:</h3>
-        </div>
+
 
   </main>
   <footer>
@@ -94,12 +80,6 @@
         popupAnchor: [10, -35]
 
       });
-
-      // rsu.forEach(function (r) {
-      //   L.marker([r[1], r[2]], { icon: rsuIcon }).addTo(map)
-      //     .bindTooltip("rsu_" + r[0], { permanent: false });
-      // });
-
 
     </script>
 

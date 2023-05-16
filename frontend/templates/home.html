@@ -55,41 +55,6 @@
             </thead>
             <tbody>
 
-              <tr>
-                <th scope="row">Altitude</th>
-                <td>{{ drone_data_live['altitude'] }}</td>
-                <td>{{ drone_data_live['altitude'] }}</td>
-              </tr>
-              <tr>
-                <th scope="row">Latitude</th>
-                <td>{{ drone_data_live['latitude'] }}</td>
-                <td>{{ drone_data_live['latitude'] }}</td>
-              </tr>
-              <tr>
-                <th scope="row">Longitude</th>
-                <td>{{ drone_data_live['longitude'] }}</td>
-                <td>{{ drone_data_live['longitude'] }}</td>
-              </tr>
-              <tr>
-                <th scope="row">Horizontal Velocity</th>
-                <td>{{ drone_data_live['horizontal_velocity'] }}</td>
-                <td>{{ drone_data_live['horizontal_velocity'] }}</td>
-              </tr>
-              <tr>
-                <th scope="row">Heading</th>
-                <td>{{ drone_data_live['heading'] }}</td>
-                <td>{{ drone_data_live['heading'] }}</td>
-              </tr>
-              <!-- <tr>
-                <th scope="row">Prob. of collision (Latitude)</th>
-                <td></td>
-                <td></td>
-              </tr>
-              <tr>
-                <th scope="row">Prob. of collision (Longitude)</th>
-                <td></td>
-                <td></td>
-              </tr>-->
 
             </tbody>
           </table>
@@ -113,15 +78,9 @@
           <h4>RSA Project - Autonomous Drone Crash Avoidance System</h4>
         </div>
 
-        <h3>Drone Data:</h3>
-
-        {% if drone_data_live %}
-        {% for drone_id, drone_data in drone_data_live.items() %}
-        <p>Drone {{ drone_id }} - Latitude: {{ drone_data.latitude }}, Longitude: {{ drone_data.longitude }}</p>
-        {% endfor %}
-        {% else %}
-        <p>No drone data available</p>
-        {% endif %}
+        <div id="raw-drone-data">
+          <h3>Drone Data:</h3>
+        </div>
 
   </main>
   <footer>
@@ -136,10 +95,10 @@
 
       });
 
-      rsu.forEach(function (r) {
-        L.marker([r[1], r[2]], { icon: rsuIcon }).addTo(map)
-          .bindTooltip("rsu_" + r[0], { permanent: false });
-      });
+      // rsu.forEach(function (r) {
+      //   L.marker([r[1], r[2]], { icon: rsuIcon }).addTo(map)
+      //     .bindTooltip("rsu_" + r[0], { permanent: false });
+      // });
 
 
     </script>

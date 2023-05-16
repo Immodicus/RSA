@@ -20,19 +20,30 @@ function obuCall() {
     $(document).ready(function(){
 
         $.ajax({
-            url: '',
+            url: '/drone-data',
             type: 'get',
             contentType: 'application/json',
             data: {},
             success: function(response){
                 markers.forEach(delMarker)
                 
-                let i=0;
-                for(var key in response){
-                    markers[i] = L.marker([ response[key]["lat"], response[key]["long"]], {icon: obuIcon}).addTo(map)
+                let i = 0;
+                for(var key in response) {
+                    markers[i] = L.marker([ response[key]["latitude"], response[key]["longitude"]], {icon: obuIcon}).addTo(map)
                         .bindTooltip(key, {permanent: false});
                     i++;
-                } 
+                }   
+                
+                let raw_data = document.getElementById("raw-drone-data");
+                raw_data.innerHTML = "<h3>Drone Data: </h3>";
+                for(var key in response) {
+                    raw_data.innerHTML +=  `<h6>Drone ${response[key]["drone_id"]} latitude: ${response[key]["latitude"]} longitude: ${response[key]["longitude"]}</h6>`
+                }
+
+                if (raw_data === "")
+                {
+                    raw_data.innerHTML += "<h6>No data available </h6>";
+                }
             }
         })
 

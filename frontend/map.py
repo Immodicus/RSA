@@ -29,12 +29,10 @@ def home():
         global drone_data_live
         
         if 'start' in request.form:
-            print('start')
             if simulation_process == None:
                 simulation_process = subprocess.Popen(["python3", "main.py", "-simulation_file", "simulation.json"], cwd='../', preexec_fn=os.setsid) 
 
         elif 'stop' in request.form:
-            print('stop')
             if simulation_process != None:
                 os.killpg(os.getpgid(simulation_process.pid), SIGKILL)
                 simulation_process = None

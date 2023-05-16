@@ -77,9 +77,7 @@ class Drone:
         self.coll_denm_seq: int = 0
         self.coll_denm_awareness: dict = {}
 
-        t1: Thread = Thread(target=self.go)
-        t1.start()
-        t1.join()
+        self.go()
 
     def init_live_server_conn(self, host: int, port: int):
         print(f'Drone {self.id} connecting to live server at {host}:{port}')
@@ -226,6 +224,10 @@ class Drone:
 
                     if not self.coll_avd_active:
                         self.make_a_decision()
+                        # there is a racing condition where update a decision may be called before make a decision completes
+                        # which causes update a decision to return early without computing a new solution
+                        # we should either do this or make make a decision taking into account already received denms
+                        self.update_decision()
 
     def make_a_decision(self):
         # determine the closest collision point known to us

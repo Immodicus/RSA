@@ -25,7 +25,17 @@ function obuCall() {
             contentType: 'application/json',
             data: {},
             success: function (response) {
-                markers.forEach(delMarker)
+                markers.forEach(delMarker);
+
+                const drone_count = Object.keys(response).length;
+
+                const simulation_status = document.getElementById("simulation-status");
+
+                if (drone_count === 0) {
+                    simulation_status.innerHTML = "<i>The Simulation is not running.</i><br><br>";
+                } else {
+                    simulation_status.innerHTML = "<i>The Simulation is running...</i><br><br>";
+                }
 
                 let i = 0;
                 for (var key in response) {
@@ -70,7 +80,7 @@ function obuCall() {
                   </table>`
                 }
 
-                if (raw_data === "") {
+                if (drone_count === 0) {
                     raw_data.innerHTML += "<h6>No data available </h6>";
                 }
             }
@@ -83,5 +93,3 @@ function obuCall() {
 function delMarker(value, index, array) {
     map.removeLayer(value)
 }
-
-

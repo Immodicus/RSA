@@ -20,6 +20,7 @@ class Drone:
         self.min_safe_altitude_delta = settings['min_safe_altitude_delta']
         self.cam_stale_time = settings['cam_stale_time']
 
+        self.calculate_distance_to_destination()
         self.init_live_server_conn(settings['live_server_address'], settings['live_server_port'])
         
         print(f'Drone {self.id} instanciated')
@@ -94,6 +95,8 @@ class Drone:
                             'altitude': float(coll_point.z)
                         })
         
+        progress = self.calculate_progress()
+
         data = {
                 'drone_id': self.id, 
                 'latitude': self.latitude, 
@@ -101,7 +104,8 @@ class Drone:
                 'altitude': self.pos_z,
                 'heading': self.heading, 
                 'horizontal_velocity': sqrt(self.vel_x**2 + self.vel_y**2),
-                'probable_collision_points': collision_points
+                'probable_collision_points': collision_points,
+                'progress': progress
                 }
 
         json_text = json.dumps(data, indent=4)
@@ -583,6 +587,18 @@ class Drone:
 
         self.alive = False
 
+    def calculate_progress(self) -> float:
+        dist_to_origin = sqrt((self.pos_x - self.depart[0])**2 + (self.pos_y - self.depart[1])**2)
+            
+        return dist_to_origin / self.dist_to_dest * 100
+    
+    def calculate_distance_to_destination(self):
+        origin = self.flightplan['waypoints'][0]
+        destination = self.flightplan['waypoints'][-1]
+
+        self.dest = (destination['longitude'], destination['latitude'])
+        self.depart = (origin['longitude'], origin['latitude'])
+        self.dist_to_dest = sqrt((self.depart[0] - self.dest[0])**2 + (self.depart[1] - self.dest[1])**2)
 
     def generate_cam(self):
         with open('messages/in_cam.json', 'r') as f:

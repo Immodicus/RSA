@@ -56,8 +56,9 @@ function obuCall() {
                 markers.forEach(delMarker);
 
                 const drone_count = Object.keys(response).length;
-
                 const simulation_status = document.getElementById("simulation-status");
+                const simulation_progress = document.getElementById("simulation-progress");
+                const raw_data = document.getElementById("raw-drone-data");
 
                 if (drone_count === 0) {
                     simulation_status.innerHTML = "<i>The Simulation is not running.</i><br><br>";
@@ -65,14 +66,22 @@ function obuCall() {
                     simulation_status.innerHTML = "<i>The Simulation is running...</i><br><br>";
                 }
 
+                let total_progress = 0;
                 let i = 0;
                 for (var key in response) {
                     markers[i] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
                         .bindTooltip(key, { permanent: false });
+
+                    total_progress += response[key]["progress"] * (1 / drone_count);
                     i++;
                 }
 
-                let raw_data = document.getElementById("raw-drone-data");
+                total_progress = Math.round(total_progress);
+
+                simulation_progress.innerHTML = `<div class="progress-bar" style="width: ${total_progress}%" role="progressbar" aria-valuenow="100" aria-valuemin="0"
+                        aria-valuemax="100">${total_progress}%</div>
+                        </div><br>`;
+
                 raw_data.innerHTML = "<h3>Drone Data: </h3>";
                 for (var key in response) {
                     raw_data.innerHTML += `<table class="table">

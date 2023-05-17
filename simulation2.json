@@ -1,0 +1,120 @@
+{
+    "settings":
+    {
+        "origin": 
+        {
+            "latitude": 40.640506,
+            "longitude": -8.653754
+        },
+        "radio_range": 500,
+        "min_safe_altitude_delta": 6,
+        "cam_stale_time": 10,
+        "live_server_address": "localhost",
+        "live_server_port": 6000
+    },
+    "drones": 
+    [
+        {
+            "id": 1,
+            "hostname": "192.168.98.10",
+            "port": 1883,
+            "flightplan": {
+                "max_horizontal_velocity": 25.0,
+                "max_horizontal_acceleration": 1.5,
+                "max_vertical_velocity": 2.5,
+                "max_vertical_acceleration": 1,
+                "landing_rod": 2,
+                "waypoints": [
+                    {
+                        "longitude": 0.0,
+                        "latitude": 0.0,
+                        "altitude": 0.0
+                    },
+                    {
+                        "longitude": 2500,
+                        "latitude": 1250,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 3750,
+                        "latitude": 1875,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 5000,
+                        "latitude": 2500,
+                        "altitude": 15
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "hostname": "192.168.98.20",
+            "port": 1883,
+            "flightplan": {
+                "max_horizontal_velocity": 25.0,
+                "max_horizontal_acceleration": 1.5,
+                "max_vertical_velocity": 2.5,
+                "max_vertical_acceleration": 1,
+                "landing_rod": 2,
+                "waypoints": [
+                    {
+                        "longitude": 5000,
+                        "latitude": 0,
+                        "altitude": 0.0
+                    },
+                    {
+                        "longitude": 2500,
+                        "latitude": 1250,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 1250,
+                        "latitude": 1875,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 0,
+                        "latitude": 2500,
+                        "altitude": 15
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "hostname": "192.168.98.30",
+            "port": 1883,
+            "flightplan": {
+                "max_horizontal_velocity": 25.0,
+                "max_horizontal_acceleration": 1.5,
+                "max_vertical_velocity": 2.5,
+                "max_vertical_acceleration": 1,
+                "landing_rod": 2,
+                "waypoints": [
+                    {
+                        "longitude": 2500,
+                        "latitude": 4045,
+                        "altitude": 0.0
+                    },
+                    {
+                        "longitude": 2500,
+                        "latitude": 0,
+                        "altitude": 120
+                    },
+                    {
+                        "longitude": 2500,
+                        "latitude": -1000,
+                        "altitude": 50
+                    },
+                    {
+                        "longitude": 2500,
+                        "latitude": -2000,
+                        "altitude": 30
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -134,7 +134,7 @@ class Drone:
             if self.coll_avd_active:
                 closest_point = self.coll_avd_point
                 collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(closest_point.x), float(closest_point.y))
-                self.generate_denm(Point3D(collision_longitude, collision_latitude, closest_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
+                self.generate_denm(Point3D(collision_longitude, collision_latitude, closest_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)], self.coll_avd_action)
         
         self.cam_awareness[cam_stationID] = {
             'received_at': current_time, 
@@ -172,6 +172,7 @@ class Drone:
     def collision_detection(self):
         # predict my future path based on my heading and position
         my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
+        my_speed = self.get_hor_speed()
 
         for cam_stationID, cam_data in self.cam_awareness.items():
             cam_heading = cam_data['heading']
@@ -224,7 +225,7 @@ class Drone:
                 # if we weren't aware of it, now we are
                 if not found:
                     print(f'Drone {self.id} detected a probable collision with {cam_stationID} at: {collision_point} in {my_time}:{cam_time} seconds')
-                    self.coll_points.append({'point': collision_point, 'stale': False})
+                    self.coll_points.append({'point': collision_point, 'stale': False, 'speeds': (my_speed, cam_speed)})
 
                     if not self.coll_avd_active:
                         self.make_a_decision()
@@ -268,10 +269,13 @@ class Drone:
             event_y = denm_data['event_y']
             event_z = denm_data['event_z']
             decision_z = denm_data['decision_z']
+            action = denm_data['action']
 
             if abs(self.coll_avd_point.x - event_x) < 5 and abs(self.coll_avd_point.y - event_y) < 5:
+                
+                # if they have higher id, their decision supersedes ours
                 if denm_stationID > self.id:
-                    restrictions.append((denm_stationID, decision_z, event_z))
+                    restrictions.append((denm_stationID, decision_z, event_z, action))
 
         print(f'Drone {self.id} restrictions: {restrictions}')
 
@@ -279,36 +283,49 @@ class Drone:
         if len(restrictions) == 0:
             if send_always:
                 collision_latitude, collision_longitude = self.get_lat_lon_from_position(float(self.coll_avd_point.x), float(self.coll_avd_point.y))
-                self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
+                self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)], self.coll_avd_action)
                 print(f'Drone {self.id} sending denm {self.coll_avd_point.x, self.coll_avd_point.y, self.coll_avd_action_value}')
             
             return
         
-        # we might need to change our decision
-        # if there's only one restriction and it's the same as us do the opposite
-        changed = False
-        if len(restrictions) == 1:
-            print(f'Drone: {self.id} {self.coll_avd_point}')
-            decision_z = restrictions[0][1]
-            event_z = restrictions[0][2]
-            if self.coll_avd_action == Action.ALT_INCR and decision_z > self.coll_avd_point.z:
-                self.coll_avd_action = Action.ALT_DEC
-                self.coll_avd_action_value = event_z - self.min_safe_altitude_delta / 2 - 0.5
-                
-                changed = True
-            elif self.coll_avd_action == Action.ALT_DEC and decision_z < self.coll_avd_point.z:
-                self.coll_avd_action = Action.ALT_INCR
-                self.coll_avd_action_value = event_z + self.min_safe_altitude_delta / 2 + 0.5
+        print(f'Drone: {self.id} {self.coll_avd_point}')
 
-                changed = True
+        restriction_actions = [r[3] for r in restrictions]
+
+        # if our action is not in the restrictions then there's no conflict. we're fine
+        if self.coll_avd_action not in restriction_actions:
+            return
+            
+        # try and find a new action to take that causes no conflicts
+        new_action = [drone_act for drone_act in Action if drone_act not in restriction_actions]
+        
+        if len(new_action) == 0:
+            print(f'Drone {self.id} no new action possible!!!!!')
+
+        new_action = new_action[0]
+        self.coll_avd_action = new_action
+            
+        changed = False
+        if new_action == Action.ALT_INCR:
+            self.coll_avd_action_value = event_z + self.min_safe_altitude_delta / 2 + 0.5
+            changed = True
+        elif new_action == Action.ALT_DEC:
+            self.coll_avd_action_value = event_z - self.min_safe_altitude_delta / 2 - 0.5
+            changed = True
+        elif new_action == Action.SPEED_DECR:
+            self.coll_avd_action_value = self.get_hor_speed() - 5
+            changed = True
+        elif new_action == Action.SPEED_INCR:
+            self.coll_avd_action_value = self.get_hor_speed() + 5
+            changed = True
 
         # generate new DENM
         if changed:
-            print(f'Drone {self.id} changed decision to {self.coll_avd_action}: {self.coll_avd_action_value}')
+            print(f'Drone {self.id} changed decision to {str(self.coll_avd_action)}: {self.coll_avd_action_value}')
             collision_latitude, collision_longitude = self.get_lat_lon_from_position(self.coll_avd_point.x, self.coll_avd_point.y)
-            self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)])
+            self.generate_denm(Point3D(collision_longitude, collision_latitude, self.coll_avd_point.z), [Point3D(collision_longitude, collision_latitude, self.coll_avd_action_value)], self.coll_avd_action)
 
-    def generate_denm(self, collision_point: Point3D, avoidance_path: list[Point3D]):
+    def generate_denm(self, collision_point: Point3D, avoidance_path: list[Point3D], action: Action):
         collision_point = collision_point.evalf()
         avoidance_path = [point.evalf() for point in avoidance_path]
         
@@ -327,6 +344,8 @@ class Drone:
             m['situation']['eventType']['causeCode'] = 97
             m['situation']['eventType']['subCauseCode'] = 97
 
+            m['alacarte']['positioningSolution'] = action
+            
             m['alacarte']['roadWorks']['recommendedPath'] = []
             for point in avoidance_path:
                 m['alacarte']['roadWorks']['recommendedPath'].append(
@@ -370,6 +389,8 @@ class Drone:
         decision_point = message['alacarte']['roadWorks']['recommendedPath'][0]
         decision_y, decision_x = self.get_position_from_lat_lon(decision_point['latitude'], decision_point['longitude'])
         decision_z = decision_point['altitude']['altitudeValue']
+
+        action = message['alacarte']['positioningSolution']
         
         # update denm awareness
         self.coll_denm_awareness[denm_stationID] = {
@@ -379,7 +400,8 @@ class Drone:
             'event_z': event_z,
             'decision_x': decision_x,
             'decision_y': decision_y,
-            'decision_z': decision_z
+            'decision_z': decision_z,
+            'action': action,
             }
         
         self.update_decision()
@@ -440,10 +462,17 @@ class Drone:
                 heading = get_heading_between_points(pos_x, t_pos_x, pos_y, t_pos_y)
 
                 # if collision avoidance is active override settings
-                # only target altitude for now
                 if self.coll_avd_active == True:
-                    t_pos_z = self.coll_avd_action_value
-                    z_mov = t_pos_z > pos_z
+                    if self.coll_avd_action == Action.ALT_DEC or self.coll_avd_action == Action.ALT_INCR:
+                        t_pos_z = self.coll_avd_action_value
+                        z_mov = t_pos_z > pos_z
+
+                        max_horizontal_acceleration = self.flightplan["max_horizontal_acceleration"]
+                    else:
+                        t_pos_x = waypoint['longitude']
+                        z_mov = t_pos_z > pos_z
+                        
+                        max_horizontal_velocity = self.coll_avd_action_value
 
                 current_velocity = sqrt( vel_x**2 + vel_y**2 )
                 current_velocity = current_velocity + max_horizontal_acceleration * time_delta  
@@ -542,8 +571,8 @@ class Drone:
                     alive = False
 
                 if self.coll_avd_active == True:
-                    # if we're past the collision point, disable collision avoidance and remove restricitons
-                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) and (
+                    # if we're past the collision point, disable collision avoidance and remove movement restricitons
+                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) or (
                         (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y)
                         ):
                         print(f'Drone {self.id} disabling collision avoidance')
@@ -554,6 +583,7 @@ class Drone:
                         x_mov = t_pos_x > pos_x
                         y_mov = t_pos_y > pos_y
                         z_mov = t_pos_z > pos_z
+                        max_horizontal_velocity = self.flightplan["max_horizontal_velocity"]
 
                 latitude, longitude = self.get_lat_lon_from_position(pos_x, pos_y)
 
@@ -586,6 +616,9 @@ class Drone:
             outfile.write(json.dumps({'coordinates': coordinates}, indent= 4))
 
         self.alive = False
+
+    def get_hor_speed(self) -> float:
+        return sqrt(self.vel_x**2 + self.vel_y**2)
 
     def calculate_progress(self) -> float:
         dist_to_origin = sqrt((self.pos_x - self.depart[0])**2 + (self.pos_y - self.depart[1])**2)

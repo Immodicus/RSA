@@ -94,24 +94,24 @@ function obuCall() {
                     <tbody>
         
                       <tr>
-                        <th scope="row">Altitude</th>
-                        <td>${response[key]["altitude"]}</td>
+                        <th scope="row">Altitude (m)</th>
+                        <td>${parseFloat(response[key]["altitude"].toFixed(3))}</td>
                       </tr>
                       <tr>
                         <th scope="row">Latitude</th>
-                        <td>${response[key]["latitude"]}</td>
+                        <td>${parseFloat(response[key]["latitude"].toFixed(6))}</td>
                       </tr>
                       <tr>
                         <th scope="row">Longitude</th>
-                        <td>${response[key]["longitude"]}</td>
+                        <td>${parseFloat(response[key]["longitude"].toFixed(6))}</td>
                       </tr>
                       <tr>
-                        <th scope="row">Horizontal Velocity</th>
-                        <td>${response[key]["horizontal_velocity"]}</td>
+                        <th scope="row">Horizontal Velocity (m/s)</th>
+                        <td>${parseFloat(response[key]["horizontal_velocity"].toFixed(3))}</td>
                       </tr>
                       <tr>
-                        <th scope="row">Heading</th>
-                        <td>${response[key]["heading"]}</td>
+                        <th scope="row">Heading (°)</th>
+                        <td>${parseFloat((response[key]["heading"] * (180 / Math.PI)).toFixed(3))}</td>
                       </tr>        
                     </tbody>
                   </table>`

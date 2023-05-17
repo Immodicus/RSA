@@ -16,6 +16,34 @@ var markers = [];
 
 setInterval(obuCall, 1000);
 
+$('#start-button').click(
+    function () {
+        $.ajax({
+            url: '/start',
+            type: 'post',
+            contentType: 'application/json',
+            data: {},
+            success: function () {
+                
+            }
+        })
+    }
+)
+
+$('#stop-button').click(
+    function () {
+        $.ajax({
+            url: '/stop',
+            type: 'post',
+            contentType: 'application/json',
+            data: {},
+            success: function () {
+                
+            }
+        })
+    }
+)
+
 function obuCall() {
     $(document).ready(function () {
 

@@ -56,11 +56,8 @@
               aria-valuemax="100">100%</div>
           </div>--><br>
           <div>
-            <form method="POST" action="/">
-              {{ form.csrf_token }}
-              <span style="width:50%;">{{ form.start() }}</span>
-              <span style="width:50%;">{{ form.stop() }}</span>
-            </form>
+            <button class="btn btn-primary btn-md me-4 m-4 px-4" id="start-button">Start</button>
+            <button class="btn btn-danger btn-md me-4 m-4 px-4" id="stop-button">Stop</button>
           </div>
         </div>
         <!-- Left column content here -->

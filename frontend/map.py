@@ -1,7 +1,4 @@
-from flask import Flask, render_template, request, jsonify
-from flask_wtf import FlaskForm
-from wtforms import SubmitField
-import json, requests
+from flask import Flask, render_template, request
 import subprocess, os
 from signal import SIGKILL
 
@@ -15,31 +12,31 @@ app.config['SECRET_KEY'] = 'pk.eyJ1IjoieGNsb3VkIiwiYSI6ImNsZ3huZnFiZzAxOHQzcGp1Y
 
 simulation_process: subprocess.Popen = None  # Variable to store the simulation process
 
-class DroneForm(FlaskForm):
-    start = SubmitField('Start',render_kw={"class": "btn btn-primary btn-md me-4 m-4 px-4", "id": "startButton"})
-    stop = SubmitField('Stop ',render_kw={"class": "btn btn-danger btn-md me-4 m-4 px-4"})
-
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    form = DroneForm()
+    return render_template('home.html')
 
-    if request.method == 'POST':
-        global simulation_process
-        global drone_data_live
-        
-        if 'start' in request.form:
-            if simulation_process == None:
-                simulation_process = subprocess.Popen(["python3", "main.py", "-simulation_file", "simulation.json"], cwd='../', preexec_fn=os.setsid) 
+@app.route('/start', methods=['POST'])
+def start():
+    global simulation_process
+    
+    if simulation_process == None:
+        simulation_process = subprocess.Popen(["python3", "main.py", "-simulation_file", "simulation.json"], cwd='../', preexec_fn=os.setsid)
 
-        elif 'stop' in request.form:
-            if simulation_process != None:
-                os.killpg(os.getpgid(simulation_process.pid), SIGKILL)
-                simulation_process = None
-                drone_data_live = {}
+    return 'Ok', 200
 
-    return render_template('home.html', form=form)
+@app.route('/stop', methods=['POST'])
+def stop():
+    global simulation_process
+    global drone_data_live
+    
+    if simulation_process != None:
+        os.killpg(os.getpgid(simulation_process.pid), SIGKILL)
+        simulation_process = None
+        drone_data_live = {}
 
+    return 'Ok', 200
 
 @app.route('/drone-data', methods=['GET', 'POST'])
 def drone_data_func():

@@ -6,21 +6,27 @@ import requests
 
 
 drone_data: dict = {}
+drone_mapping: dict = {}
 
-def client_echo_thread(client_socket: socket.socket, addr):
-
+def client_echo_thread(client_socket: socket.socket, addr):   
+    
     while True:
         message = client_socket.recv(1024)
         if not message: break
         
         message_text = message.decode("utf-8")
         message_json = json.loads(message_text)
-        drone_data[message_json['drone_id']] = message_json      
+        drone_data[message_json['drone_id']] = message_json    
+
+        if addr not in drone_mapping:
+            drone_mapping[addr] = message_json['drone_id']   
 
         # Send a POST request to the Flask server with the drone data
         requests.post('http://localhost:8000/drone-data', json=drone_data)
 
     print(f"Closing connection to {addr}")
+    del drone_data[drone_mapping[addr]]
+    del drone_mapping[addr]
     client_socket.close()
 
 

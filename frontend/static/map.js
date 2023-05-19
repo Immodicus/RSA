@@ -14,15 +14,22 @@ var obuIcon = L.icon({
 //array de markers
 var markers = [];
 
+var simulation_files = [];
+var selected_sim_file = undefined;
+
 setInterval(obuCall, 1000);
 
-$('#start-button').click(
+$('#start-button').click(    
     function () {
+        if(selected_sim_file === undefined || selected_sim_file === "Select a simulation file") {
+            alert("You need to select a simulation file!");
+        }
+       
         $.ajax({
             url: '/start',
             type: 'post',
             contentType: 'application/json',
-            data: {},
+            data: JSON.stringify({"sim_file": selected_sim_file }),
             success: function () {
                 
             }
@@ -43,6 +50,32 @@ $('#stop-button').click(
         })
     }
 )
+
+$("#sim-file-list").on('change', function(e){
+    selected_sim_file = this.value;
+    console.log(`Selected file: ${this.value}`);
+});
+
+$(document).ready(function () {
+    const sim_file_list = document.getElementById("sim-file-list");
+    sim_file_list.innerHTML = "<option selected>Select a simulation file</option>";
+
+    simulation_files = [];
+
+    $.ajax({
+        url: '/list',
+        type: 'get',
+        contentType: 'application/json',
+        data: {},
+        success: function (response) {
+            console.log(response)
+            for ( file in response.sim_files) {
+                sim_file_list.innerHTML += `<option value=${response.sim_files[file]}>${response.sim_files[file]}</option>`;
+                simulation_files.push(response.sim_files[file]);
+            }
+        }
+    });
+})
 
 function obuCall() {
     $(document).ready(function () {

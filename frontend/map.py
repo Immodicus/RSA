@@ -55,7 +55,7 @@ def drone_data_func():
     global drone_data_live
     
     if request.method == 'POST':
-        drone_data_live = request.get_json()
+        drone_data_live = drone_data_live | request.get_json()
         
         return 'Ok', 200
     

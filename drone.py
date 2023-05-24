@@ -88,10 +88,12 @@ class Drone:
 
     def live_server_send(self):
         collision_points: list = []
-        for coll_point in [c['point'] for c in self.coll_points]:
+        for coll_point in [c['point'] for c in self.coll_points if not c['stale']]:
+            coll_lat, coll_long = self.get_lat_lon_from_position(float(coll_point.x), float(coll_point.y))
+
             collision_points.append({
-                            'latitude': float(coll_point.x), 
-                            'longitude': float(coll_point.y), 
+                            'latitude': coll_lat, 
+                            'longitude': coll_long, 
                             'altitude': float(coll_point.z)
                         })
         

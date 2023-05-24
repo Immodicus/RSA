@@ -11,6 +11,13 @@ var obuIcon = L.icon({
     popupAnchor: [10, -35]
 });
 
+var pointIcon = L.icon({
+    iconUrl: "static/point.svg",
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+    popupAnchor: [10, -35]
+});
+
 //array de markers
 var markers = [];
 
@@ -101,12 +108,19 @@ function obuCall() {
 
                 let total_progress = 0;
                 let i = 0;
-                for (var key in response) {
-                    markers[i] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
+                for (const key in response) {
+                    markers[i++] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
                         .bindTooltip(key, { permanent: false });
 
                     total_progress += response[key]["progress"] * (1 / drone_count);
-                    i++;
+
+                    for(const coll_key in response[key]["probable_collision_points"]) {
+                        const coll_point = response[key]["probable_collision_points"][coll_key];
+                        console.log(coll_point);
+                        
+                        markers[i++] = L.marker([coll_point["latitude"], coll_point["longitude"]], { icon: pointIcon }).addTo(map)
+                        .bindTooltip(key+coll_key, { permanent: false });
+                    }
                 }
 
                 total_progress = Math.round(total_progress);

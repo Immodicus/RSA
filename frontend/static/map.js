@@ -116,7 +116,6 @@ function obuCall() {
 
                     for(const coll_key in response[key]["probable_collision_points"]) {
                         const coll_point = response[key]["probable_collision_points"][coll_key];
-                        console.log(coll_point);
                         
                         markers[i++] = L.marker([coll_point["latitude"], coll_point["longitude"]], { icon: pointIcon }).addTo(map)
                         .bindTooltip(key+coll_key, { permanent: false });

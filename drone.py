@@ -471,7 +471,7 @@ class Drone:
 
                         max_horizontal_acceleration = self.flightplan["max_horizontal_acceleration"]
                     else:
-                        t_pos_x = waypoint['longitude']
+                        t_pos_z = waypoint['altitude']
                         z_mov = t_pos_z > pos_z
                         
                         max_horizontal_velocity = self.coll_avd_action_value

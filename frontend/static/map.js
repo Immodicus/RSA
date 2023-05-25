@@ -12,9 +12,9 @@ var obuIcon = L.icon({
 });
 
 var pointIcon = L.icon({
-    iconUrl: "static/point.svg",
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconUrl: "static/moon.png",
+    iconSize: [24, 24],
+    iconAnchor: [18, 39],
     popupAnchor: [10, -35]
 });
 

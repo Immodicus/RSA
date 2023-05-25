@@ -435,18 +435,18 @@ class Drone:
             print(f'Waypoint {i}: {waypoint}')
 
             if i == 0:
-                pos_x = waypoint['longitude']
-                pos_y = waypoint['latitude']
-                pos_z = waypoint['altitude']
+                pos_x = waypoint['x']
+                pos_y = waypoint['y']
+                pos_z = waypoint['z']
                 state = 'takeoff'
                 vel_x = 0
                 vel_y = 0
                 vel_z = 0
                 continue
 
-            t_pos_x = waypoint['longitude']
-            t_pos_y = waypoint['latitude']
-            t_pos_z = waypoint['altitude']
+            t_pos_x = waypoint['x']
+            t_pos_y = waypoint['y']
+            t_pos_z = waypoint['z']
 
             x_mov = t_pos_x > pos_x
             y_mov = t_pos_y > pos_y
@@ -471,7 +471,7 @@ class Drone:
 
                         max_horizontal_acceleration = self.flightplan["max_horizontal_acceleration"]
                     else:
-                        t_pos_z = waypoint['altitude']
+                        t_pos_z = waypoint['z']
                         z_mov = t_pos_z > pos_z
                         
                         max_horizontal_velocity = self.coll_avd_action_value
@@ -579,9 +579,9 @@ class Drone:
                         ):
                         print(f'Drone {self.id} disabling collision avoidance')
                         self.coll_avd_active = False
-                        t_pos_x = waypoint['longitude']
-                        t_pos_y = waypoint['latitude']
-                        t_pos_z = waypoint['altitude']
+                        t_pos_x = waypoint['x']
+                        t_pos_y = waypoint['y']
+                        t_pos_z = waypoint['z']
                         x_mov = t_pos_x > pos_x
                         y_mov = t_pos_y > pos_y
                         z_mov = t_pos_z > pos_z
@@ -631,8 +631,8 @@ class Drone:
         origin = self.flightplan['waypoints'][0]
         destination = self.flightplan['waypoints'][-1]
 
-        self.dest = (destination['longitude'], destination['latitude'])
-        self.depart = (origin['longitude'], origin['latitude'])
+        self.dest = (destination['x'], destination['y'])
+        self.depart = (origin['x'], origin['y'])
         self.dist_to_dest = sqrt((self.depart[0] - self.dest[0])**2 + (self.depart[1] - self.dest[1])**2)
 
     def generate_cam(self):

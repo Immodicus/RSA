@@ -26,24 +26,24 @@
                 "landing_rod": 2,
                 "waypoints": [
                     {
-                        "longitude": 0.0,
-                        "latitude": 0.0,
-                        "altitude": 0.0
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
                     },
                     {
-                        "longitude": 2500,
-                        "latitude": 1250,
-                        "altitude": 120
+                        "x": 2500,
+                        "y": 1250,
+                        "z": 120
                     },
                     {
-                        "longitude": 3750,
-                        "latitude": 1875,
-                        "altitude": 120
+                        "x": 3750,
+                        "y": 1875,
+                        "z": 120
                     },
                     {
-                        "longitude": 5000,
-                        "latitude": 2500,
-                        "altitude": 15
+                        "x": 5000,
+                        "y": 2500,
+                        "z": 15
                     }
                 ]
             }
@@ -60,24 +60,24 @@
                 "landing_rod": 2,
                 "waypoints": [
                     {
-                        "longitude": 5000,
-                        "latitude": 0,
-                        "altitude": 0.0
+                        "x": 5000,
+                        "y": 0,
+                        "z": 0.0
                     },
                     {
-                        "longitude": 2500,
-                        "latitude": 1250,
-                        "altitude": 120
+                        "x": 2500,
+                        "y": 1250,
+                        "z": 120
                     },
                     {
-                        "longitude": 1250,
-                        "latitude": 1875,
-                        "altitude": 120
+                        "x": 1250,
+                        "y": 1875,
+                        "z": 120
                     },
                     {
-                        "longitude": 0,
-                        "latitude": 2500,
-                        "altitude": 15
+                        "x": 0,
+                        "y": 2500,
+                        "z": 15
                     }
                 ]
             }
@@ -94,24 +94,24 @@
                 "landing_rod": 2,
                 "waypoints": [
                     {
-                        "longitude": 2500,
-                        "latitude": 4045,
-                        "altitude": 0.0
+                        "x": 2500,
+                        "y": 4045,
+                        "z": 0.0
                     },
                     {
-                        "longitude": 2500,
-                        "latitude": 0,
-                        "altitude": 120
+                        "x": 2500,
+                        "y": 0,
+                        "z": 120
                     },
                     {
-                        "longitude": 2500,
-                        "latitude": -1000,
-                        "altitude": 50
+                        "x": 2500,
+                        "y": -1000,
+                        "z": 50
                     },
                     {
-                        "longitude": 2500,
-                        "latitude": -2000,
-                        "altitude": 30
+                        "x": 2500,
+                        "y": -2000,
+                        "z": 30
                     }
                 ]
             }

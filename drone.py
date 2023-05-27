@@ -161,8 +161,8 @@ class Drone:
         stale = []
         for coll_point in [c for c in self.coll_points if not c['stale']]:
             collision_point = coll_point['point']
-            if ((self.vel_x > 0 and collision_point.x < self.pos_x) or (self.vel_x < 0 and collision_point.x > self.pos_x)) or (
-                (self.vel_y > 0 and collision_point.y < self.pos_y) or (self.vel_y < 0 and collision_point.y > self.pos_y)
+            if ((self.vel_x > 0 and collision_point.x + 25 < self.pos_x) or (self.vel_x < 0 and collision_point.x - 25 > self.pos_x)) or (
+                (self.vel_y > 0 and collision_point.y + 25 < self.pos_y) or (self.vel_y < 0 and collision_point.y - 25 > self.pos_y)
                ):
                 stale.append(coll_point)
         
@@ -574,8 +574,8 @@ class Drone:
 
                 if self.coll_avd_active == True:
                     # if we're past the collision point, disable collision avoidance and remove movement restricitons
-                    if ((vel_x > 0 and self.coll_avd_point.x < pos_x) or (vel_x < 0 and self.coll_avd_point.x > pos_x)) or (
-                        (vel_y > 0 and self.coll_avd_point.y < pos_y) or (vel_y < 0 and self.coll_avd_point.y > pos_y)
+                    if ((vel_x > 0 and self.coll_avd_point.x + 25 < pos_x) or (vel_x < 0 and self.coll_avd_point.x - 25 > pos_x)) or (
+                        (vel_y > 0 and self.coll_avd_point.y + 25 < pos_y) or (vel_y < 0 and self.coll_avd_point.y - 25 > pos_y)
                         ):
                         print(f'Drone {self.id} disabling collision avoidance')
                         self.coll_avd_active = False

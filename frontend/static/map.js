@@ -13,7 +13,7 @@ var obuIcon = L.icon({
 
 var pointIcon = L.icon({
     iconUrl: "static/moon.png",
-    iconSize: [24, 24],
+    iconSize: [32, 32],
     iconAnchor: [18, 39],
     popupAnchor: [10, -35]
 });
@@ -108,18 +108,23 @@ function obuCall() {
 
                 let total_progress = 0;
                 let i = 0;
+
+                // draw collision points first
                 for (const key in response) {
-                    markers[i++] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
-                        .bindTooltip(key, { permanent: false });
-
-                    total_progress += response[key]["progress"] * (1 / drone_count);
-
                     for(const coll_key in response[key]["probable_collision_points"]) {
                         const coll_point = response[key]["probable_collision_points"][coll_key];
                         
                         markers[i++] = L.marker([coll_point["latitude"], coll_point["longitude"]], { icon: pointIcon }).addTo(map)
                         .bindTooltip(key+coll_key, { permanent: false });
                     }
+                }
+
+                // draw drones after
+                for (const key in response) {
+                    markers[i++] = L.marker([response[key]["latitude"], response[key]["longitude"]], { icon: obuIcon }).addTo(map)
+                        .bindTooltip(key, { permanent: false });
+
+                    total_progress += response[key]["progress"] * (1 / drone_count);
                 }
 
                 total_progress = Math.round(total_progress);

@@ -153,9 +153,6 @@ class Drone:
             del self.cam_awareness[stale]
             print(f'Drone {self.id} removed stale entry for drone {stale}')
 
-        self.collision_cleanup()
-        self.collision_detection()
-
     # replace me by removing the point when collision avoidance is disabled
     def collision_cleanup(self):
         stale = []
@@ -176,7 +173,10 @@ class Drone:
         my_line = Line(Point(self.pos_x, self.pos_y), Point(self.pos_x + sin(self.heading), self.pos_y + cos(self.heading)))
         my_speed = self.get_hor_speed()
 
-        for cam_stationID, cam_data in self.cam_awareness.items():
+        # prevent changes to the dictionary while iteration if a CAM is received in the meantime
+        cam_awareness_cpy = self.cam_awareness.copy()
+
+        for cam_stationID, cam_data in cam_awareness_cpy.items():
             cam_heading = cam_data['heading']
             cam_x = cam_data['x']
             cam_y = cam_data['y']
@@ -604,6 +604,8 @@ class Drone:
                 self.latitude = latitude
                 self.longitude = longitude
                 self.generate_cam()
+                self.collision_cleanup()
+                self.collision_detection()
                 self.live_server_send()
 
                 time.sleep(0.5)

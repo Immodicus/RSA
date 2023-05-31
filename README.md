@@ -29,31 +29,42 @@ docker network create vanetzalan0 --subnet 192.168.98.0/24
 docker compose up
 ```
 
-## Running
+## Running the simulation seperately
 
-1. Change ***simulation.json*** file to match your preferences and adjust ***docker-compose.yml*** appropriately
+1. Change ***simulation.json*** file to match your preferences and adjust ***docker-compose.yml*** appropriately (or use one of the included ***simulation*.json*** files)
 
 2. Install the required dependencies
 ```bash
+cd simulation
 pip3 install -r requirements.txt
 ```
 
-3. Run the simulation
+3. Start the tcp server (this is required even if you're not running the frontend)
 ```bash
+cd frontend
+python3 simulate_live.py 6000 # this number must match the live_server_port defined in the simulation file you're using
+```
+
+4. Run the simulation
+```bash
+cd simulation
 python3 main.py -simulation_file simulation.json
 ```
 
-## Running Frontend
+## Running the simulation from the frontend interface
 Get in into frontend folder and run the following commands
-```
+
+1. Install the required dependencies
+```bash
 python3 -m venv venv
-```
-```
 source venv/bin/activate
-```
-```
 pip3 install -r requirements.txt
 ```
-```
-flask --app map run or python3 map.py
+2. Do step `1` through `3` of the [previous section](#running-the-simulation-seperately)
+
+3. Start the frontend interface
+```bash
+flask --app map run
+# or
+python3 map.py
 ```

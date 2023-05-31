@@ -189,11 +189,11 @@ class Drone:
             # if we're to far away there's no point in trying to detect a collision given possible future 
             # heading changes
             if sqrt((self.pos_x - cam_x)**2 + (self.pos_y - cam_y)**2) > self.radio_range:
-                return
-            
+                continue
+
             # if the altitude delta is below the defined threshold we're fine
             if abs(self.pos_z - cam_z) > self.min_safe_altitude_delta:
-                return
+                continue
 
             # calculate 2D intersection between our lines
             intersection: list[Point2D] = my_line.intersection(cam_line)

@@ -27,7 +27,7 @@ def start():
         return '???', 400
     
     if simulation_process == None:
-        simulation_process = subprocess.Popen(["python3", "main.py", "-simulation_file", json["sim_file"]], cwd='../', preexec_fn=os.setsid)
+        simulation_process = subprocess.Popen(["python3", "main.py", "-simulation_file", json["sim_file"]], cwd='../simulation/', preexec_fn=os.setsid)
 
     return 'Ok', 200
 
@@ -45,8 +45,8 @@ def stop():
 
 @app.route('/list', methods=['GET'])
 def list():
-    simulation_file_list = glob.glob('../simulation*.json')
-    simulation_file_list = [sim_file.removeprefix('../') for sim_file in simulation_file_list]
+    simulation_file_list = glob.glob('../simulation/simulation*.json')
+    simulation_file_list = [sim_file.removeprefix('../simulation/') for sim_file in simulation_file_list]
 
     return {'sim_files': simulation_file_list}, 200
 

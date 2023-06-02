@@ -31,21 +31,23 @@ docker compose up
 
 ## Running the simulation seperately
 
-1. Change ***simulation.json*** file to match your preferences and adjust ***docker-compose.yml*** appropriately (or use one of the included ***simulation*.json*** files)
+1. Change ***simulation.json*** file to match your preferences (or use one of the included files in the ***/simulation*** directory)
 
-2. Install the required dependencies
+2. Adjust the ***docker-compose.yml*** file in the vanetza root directory appropriately (or copy the included one from the ***/simulation*** directory)
+
+3. Install the required dependencies
 ```bash
 cd simulation
 pip3 install -r requirements.txt
 ```
 
-3. Start the tcp server (this is required even if you're not running the frontend)
+4. Start the tcp server (this is required even if you're not running the frontend)
 ```bash
 cd frontend
 python3 simulate_live.py 6000 # this number must match the live_server_port defined in the simulation file you're using
 ```
 
-4. Run the simulation
+5. Run the simulation in another terminal window
 ```bash
 cd simulation
 python3 main.py -simulation_file simulation.json
@@ -60,7 +62,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 ```
-2. Do step `1` through `3` of the [previous section](#running-the-simulation-seperately)
+2. Do step `1` through `4` of the [previous section](#running-the-simulation-seperately)
 
 3. Start the frontend interface
 ```bash
